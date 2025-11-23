@@ -51,4 +51,5 @@ if user_input := st.chat_input("અહીં લખો..."):
             st.markdown(response.text)
         st.session_state.messages.append({"role": "assistant", "content": response.text})
     except Exception as e:
-        st.error("ક્ષમા કરશો, કોઈ ટેકનિકલ ભૂલ આવી છે.")
+
+        st.error(f"સાચી એરર આ છે: {e}")
