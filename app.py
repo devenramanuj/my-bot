@@ -1,89 +1,85 @@
 import streamlit as st
 import google.generativeai as genai
 
-# --- 1. Page Configuration ---
-st.set_page_config(page_title="My Gujarati AI Friend", page_icon="❤️")
-st.title("❤️ મારો AI મિત્ર")
-st.caption("હું તમારી લાગણીઓ સમજું છું. ગુજરાતી કે English માં વાત કરો.")
+# --- 1. Page Configuration (પેજ સેટિંગ) ---
+st.set_page_config(
+    page_title="My Gujarati AI Friend",
+    page_icon="❤️",
+    layout="centered"
+)
 
-# --- 2. Setup API Key ---
+st.title("❤️ મારો AI મિત્ર")
+st.caption("હું તમારી લાગણીઓ સમજું છું. મને ગુજરાતી અથવા English માં કઈ પણ પૂછો.")
+
+# --- 2. API Key Setup (સિક્રેટ કી મેળવવી) ---
 try:
     GOOGLE_API_KEY = st.secrets["GOOGLE_API_KEY"]
     genai.configure(api_key=GOOGLE_API_KEY)
-except:
-    st.error("API Key મળી નથી. કૃપા કરીને Streamlit Secrets માં કી સેટ કરો.")
-    st.stop()
-
-# --- 3. Smart Model Selection (આપોઆપ મોડેલ શોધશે) ---
-model_name_to_use = ""
-
-try:
-    # Google ને પૂછો કે કયા મોડેલ ઉપલબ્ધ છે
-    for m in genai.list_models():
-        if 'generateContent' in m.supported_generation_methods:
-            if 'gemini' in m.name:
-                model_name_to_use = m.name
-                break # જેવું પહેલું મોડેલ મળે તે લઈ લો
 except Exception as e:
-    st.error(f"મોડેલ શોધવામાં ભૂલ: {e}")
+    st.error("ભૂલ: API Key મળી નથી. કૃપા કરીને Streamlit Settings > Secrets માં કી ચેક કરો.")
     st.stop()
 
-if model_name_to_use == "":
-    st.error("તમારા એકાઉન્ટમાં કોઈ Gemini મોડેલ મળતું નથી. નવી API Key બનાવવી પડી શકે.")
-    st.stop()
+# --- 3. Model Configuration (આ મોડેલ ફ્રી છે) ---
+# અહીં આપણે 'gemini-1.5-flash' વાપરીશું જે ફ્રી અને ઝડપી છે.
+model_name = "gemini-1.5-flash"
 
-# (Debugging માટે - તમને દેખાશે કે કયું મોડેલ વપરાયું)
-# st.success(f"Connected to: {model_name_to_use}")
-
-# --- 4. Setup Chatbot ---
 system_instruction = """
 You are a deeply empathetic, sensitive, and caring AI companion. 
-- Respond with warmth and understanding.
-- If user speaks Gujarati, reply in Gujarati.
-- If user speaks English, reply in English.
-- Validate their feelings before giving advice.
+- Your goal is to connect emotionally with the user.
+- If the user speaks Gujarati, reply in warm, natural Gujarati.
+- If the user speaks English, reply in kind English.
+- Always be supportive and validate their feelings.
 """
 
 try:
     model = genai.GenerativeModel(
-        model_name=model_name_to_use,
+        model_name=model_name,
         system_instruction=system_instruction
     )
-except:
-    # જો System Instruction સપોર્ટ ન કરે તો સાદું મોડેલ
-    model = genai.GenerativeModel(model_name=model_name_to_use)
+except Exception as e:
+    st.error(f"મોડેલ લોડ કરવામાં તકલીફ છે: {e}")
+    st.stop()
 
-# --- 5. Chat History ---
+# --- 4. Chat History (વાતચીત યાદ રાખવી) ---
 if "messages" not in st.session_state:
-    st.session_state.messages = [{"role": "assistant", "content": "નમસ્તે! આજે તમારો મૂડ કેવો છે? હું તમારી વાત સાંભળવા અહીં જ છું."}]
+    st.session_state.messages = [
+        {"role": "assistant", "content": "નમસ્તે! કેમ છો? આજે તમારો દિવસ કેવો રહ્યો?"}
+    ]
 
-# જૂની વાતચીત બતાવો
+# જૂની ચેટ સ્ક્રીન પર બતાવો
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# --- 6. User Input & Response ---
-if user_input := st.chat_input("અહીં લખો..."):
-    # યુઝરનો મેસેજ
+# --- 5. User Input & AI Response (વાતચીત શરૂ) ---
+if user_input := st.chat_input("તમારા મનની વાત અહીં લખો..."):
+    
+    # 1. યુઝરનો મેસેજ બતાવો
     with st.chat_message("user"):
         st.markdown(user_input)
+    # હિસ્ટ્રીમાં ઉમેરો
     st.session_state.messages.append({"role": "user", "content": user_input})
 
-    # AI નો જવાબ
+    # 2. AI પાસે જવાબ માંગો
     try:
-        # History તૈયાર કરો
+        # ગુગલને મોકલવા માટે હિસ્ટ્રી તૈયાર કરવી
         chat_history = []
         for m in st.session_state.messages:
-            if m["role"] != "system":
-                chat_history.append({"role": m["role"], "parts": [m["content"]]})
+            if m["role"] != "system": # સિસ્ટમ મેસેજ મોકલવાની જરૂર નથી
+                # Streamlit માં 'assistant' હોય, પણ Google ને 'model' જોઈએ
+                role = "model" if m["role"] == "assistant" else "user"
+                chat_history.append({"role": role, "parts": [m["content"]]})
 
         # જવાબ જનરેટ કરો
         response = model.generate_content(chat_history)
-        ai_text = response.text
+        ai_response = response.text
         
+        # 3. AI નો જવાબ બતાવો
         with st.chat_message("assistant"):
-            st.markdown(ai_text)
-        st.session_state.messages.append({"role": "assistant", "content": ai_text})
+            st.markdown(ai_response)
+        
+        # હિસ્ટ્રીમાં ઉમેરો
+        st.session_state.messages.append({"role": "assistant", "content": ai_response})
 
     except Exception as e:
-        st.error(f"ફરીથી ભૂલ આવી: {e}")
+        st.error(f"ક્ષમા કરશો, નાની ટેકનિકલ ભૂલ આવી છે. ફરી પ્રયત્ન કરો. \n(Error Detail: {e})")
