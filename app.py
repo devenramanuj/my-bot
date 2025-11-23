@@ -8,15 +8,15 @@ st.set_page_config(
     layout="centered"
 )
 
-# --- 2. CSS Styles (Clean Look) ---
+# --- 2. CSS (Hide Logos + Clean Look) ---
 st.markdown("""
     <style>
-    /* 1. બેકગ્રાઉન્ડ */
+    /* બેકગ્રાઉન્ડ */
     .stApp {
         background-color: #f0f2f6;
     }
 
-    /* 2. લોગો/મેનુ/હેડર છુપાવો */
+    /* બધું છુપાવો (Header, Footer, Toolbar) */
     [data-testid="stToolbar"], 
     [data-testid="stDecoration"], 
     footer, 
@@ -25,7 +25,7 @@ st.markdown("""
         display: none !important;
     }
 
-    /* 3. મોબાઈલ મેનુ બટન (Hamburger) દેખાવું જોઈએ */
+    /* મોબાઈલ મેનુ બટન દેખાવું જોઈએ */
     [data-testid="stSidebarCollapsedControl"] {
         display: block !important;
         visibility: visible !important;
@@ -33,50 +33,34 @@ st.markdown("""
         z-index: 99999 !important;
     }
 
-    /* 4. ટાઈટલ */
+    /* ટાઈટલનું સેટિંગ */
     h1 {
         color: #1f618d;
         text-align: center;
         font-family: sans-serif;
-        margin-top: -30px;
-    }
-
-    /* 5. ડેવલપર ક્રેડિટનું સેટિંગ */
-    .dev-footer {
-        text-align: center;
-        color: grey;
-        font-size: 13px;
-        margin-top: 20px;
-        padding: 10px;
-        border-top: 1px solid #ddd;
+        margin-bottom: 5px; /* નીચે ઓછી જગ્યા */
+        margin-top: -40px;
     }
     </style>
     """, unsafe_allow_html=True)
 
-# --- 3. Sidebar (મેનુ અને ક્રેડિટ) ---
+# --- 3. Sidebar (ફક્ત Clear Chat માટે) ---
 with st.sidebar:
-    st.title("⚙️ Settings")
-    
-    # વાતચીત ડિલીટ બટન
+    st.title("Settings")
     if st.button("🗑️ Clear Chat", use_container_width=True):
         st.session_state.messages = []
         st.rerun()
-    
-    # થોડી જગ્યા છોડો
-    st.write("")
-    st.write("")
-    
-    # --- Developer Credit (ફુટર) ---
-    st.markdown("""
-    <div class="dev-footer">
-        <b>Developed by:</b><br>
-        Devendra Ramanuj<br>
-        📞 9276505035
+
+# --- 4. Main Title & Developer Credit (અહીં જ દેખાશે) ---
+st.title("Dev Bot")
+
+# તમારું નામ અહીં મુક્યું છે (ટાઈટલની નીચે)
+st.markdown("""
+    <div style='text-align: center; color: grey; font-size: 14px; margin-bottom: 20px;'>
+        Developed by <b>Devendra Ramanuj</b> | 📱 9276505035
     </div>
     """, unsafe_allow_html=True)
 
-# --- 4. Content ---
-st.title("Dev Bot")
 st.caption("Emotional AI Companion (Gujarati / English)")
 
 # --- 5. API Setup ---
