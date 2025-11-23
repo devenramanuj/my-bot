@@ -9,35 +9,33 @@ st.set_page_config(
 )
 
 # --- 2. Dynamic CSS (Theme Logic) ---
-# આ સ્વિચ હવે અહીં જ બનાવી દીધી (મેનુની બહાર)
-# જો મેનુમાં રાખવી હોય તો st.sidebar લખવું પડે, આપણે બહાર રાખી છે.
 if "theme" not in st.session_state:
     st.session_state.theme = False
 
 def toggle_theme():
     st.session_state.theme = not st.session_state.theme
 
-# --- 3. CSS Styling ---
+# --- 3. CSS Styling (LOGOS REMOVED) ---
 if st.session_state.theme:
-    # Dark Mode
     main_bg = "#0E1117"
     text_color = "#E0E0E0"
-    title_color = "#00C6FF" # Neon Blue
+    title_color = "#00C6FF"
 else:
-    # Light Mode
     main_bg = "#FFFFFF"
     text_color = "#000000"
-    title_color = "#00008B" # Dark Blue
+    title_color = "#00008B"
 
 st.markdown(f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap');
 
+    /* કલર્સ */
     .stApp {{
         background-color: {main_bg} !important;
         color: {text_color} !important;
     }}
     
+    /* ટાઈટલ */
     h1 {{
         font-family: 'Orbitron', sans-serif !important;
         color: {title_color} !important;
@@ -46,7 +44,7 @@ st.markdown(f"""
         margin-top: -10px;
     }}
 
-    /* ટાઈટલની નીચે ડેવલપર નામ */
+    /* ડેવલપર ટેક્સ્ટ */
     .dev-text {{
         text-align: center;
         color: {text_color};
@@ -55,16 +53,37 @@ st.markdown(f"""
         margin-bottom: 10px;
     }}
 
-    /* બધું છુપાવો */
-    [data-testid="stToolbar"], 
-    [data-testid="stDecoration"], 
-    footer, 
-    header {{
+    /* ------------------------------------------ */
+    /* 🛑 લોગો હટાવવાનું મુખ્ય સેટિંગ (IMP)   */
+    /* ------------------------------------------ */
+    
+    /* 1. જમણી બાજુ નીચેનું 'Manage App' બટન */
+    div[data-testid="stStatusWidget"] {{
         visibility: hidden !important;
         display: none !important;
     }}
 
-    /* મોબાઈલ મેનુ બટન */
+    /* 2. નીચેનું 'Made with Streamlit' ફુટર */
+    footer {{
+        visibility: hidden !important;
+        display: none !important;
+    }}
+
+    /* 3. ઉપરનું મેનુ (3 ટપકાં) */
+    #MainMenu {{
+        visibility: hidden !important;
+        display: none !important;
+    }}
+    
+    /* 4. ઉપરની પટ્ટી */
+    header {{
+        visibility: hidden !important;
+        display: none !important;
+    }}
+    
+    /* ------------------------------------------ */
+
+    /* મોબાઈલ મેનુ બટન દેખાવું જોઈએ */
     [data-testid="stSidebarCollapsedControl"] {{
         display: block !important;
         visibility: visible !important;
@@ -82,7 +101,7 @@ st.markdown(f"""
 
 # --- 4. Main Layout ---
 
-# (A) Title (AI Logo with Name)
+# Title
 st.markdown(f"""
     <h1 style='display: flex; align-items: center; justify-content: center; gap: 10px;'>
         <img src="https://cdn-icons-png.flaticon.com/512/2040/2040946.png" width="45" height="45" style="vertical-align: middle;">
@@ -90,22 +109,21 @@ st.markdown(f"""
     </h1>
     """, unsafe_allow_html=True)
 
-# (B) Developer Info
+# Developer Info
 st.markdown(f"""
     <div class="dev-text">
         Developed by <b>Devendra Ramanuj</b> | 📱 9276505035
     </div>
     """, unsafe_allow_html=True)
 
-# (C) The Switch (હવે અહીં સામે જ દેખાશે)
+# Switch
 col1, col2, col3 = st.columns([1, 2, 1])
 with col2:
-    # વચમાં સ્વિચ મૂકી
     mode = st.toggle("🌗 Day / Night Mode", value=st.session_state.theme, on_change=toggle_theme)
 
-st.write("") # થોડી જગ્યા
+st.write("")
 
-# --- 5. Sidebar (Only Clear Chat) ---
+# --- 5. Sidebar ---
 with st.sidebar:
     st.title("Settings")
     if st.button("🗑️ Clear Chat", use_container_width=True):
