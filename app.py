@@ -1,14 +1,14 @@
 import streamlit as st
 import google.generativeai as genai
 
-# --- 1. Page Configuration ---
+# --- 1. Page Config ---
 st.set_page_config(
     page_title="Dev Bot",
     page_icon="🤖",
     layout="centered"
 )
 
-# --- 2. CSS Magic (Mobile Touch Fix) ---
+# --- 2. CSS Magic (Input Box ને ઉપર લેવા માટે) ---
 st.markdown("""
     <style>
     /* 1. બેકગ્રાઉન્ડ */
@@ -16,42 +16,38 @@ st.markdown("""
         background-color: #f0f2f6;
     }
 
-    /* 2. લોગો અને મેનુને સંપૂર્ણપણે દૂર કરો (જગ્યા પણ ન રોકે) */
+    /* 2. ફૂટર અને હેડર ગાયબ */
     [data-testid="stToolbar"], 
     [data-testid="stDecoration"], 
-    header, 
     footer {
         visibility: hidden !important;
         display: none !important;
-        height: 0px !important;
-        width: 0px !important;
-        pointer-events: none !important; /* આનાથી ક્લિક ભૂલથી પણ ત્યાં નહીં થાય */
     }
 
-    /* 3. મોબાઈલ મેનુ બટન (ઉપર ડાબી બાજુ) પાછું લાવવા */
-    [data-testid="stSidebarCollapsedControl"] {
-        visibility: visible !important;
-        display: block !important;
-        z-index: 999999 !important; /* સૌથી ઉપર રાખવા */
-        top: 10px !important;
+    /* 3. ચેટ બોક્સનું સેટિંગ (આ મહત્વનું છે) */
+    .stChatInput {
+        position: fixed;
+        bottom: 50px !important; /* બોક્સને 50px ઉપર ખેંચ્યું */
+        z-index: 10000 !important; /* સૌથી ઉપર દેખાય */
+        background-color: #f0f2f6; /* પાછળનું ઢાંકવા માટે */
+        padding-bottom: 20px;
     }
     
-    /* 4. ચેટ બોક્સનું ફિક્સિંગ (જેથી નીચે દબાઈ ન જાય) */
-    .stChatInput {
-        padding-bottom: 20px !important;
-        z-index: 1000 !important; /* ચેટ બોક્સને સૌથી ઉપર લાવો */
+    /* 4. ચેટ બોક્સની નીચે ખાલી જગ્યા મુકો (Safety Margin) */
+    .stMain {
+        padding-bottom: 100px; 
     }
 
     /* 5. ટાઈટલ */
     h1 {
         color: #1f618d;
         text-align: center;
-        margin-top: -40px;
+        font-family: sans-serif;
     }
     </style>
     """, unsafe_allow_html=True)
 
-# --- 3. Sidebar (મેનુ) ---
+# --- 3. Sidebar ---
 with st.sidebar:
     st.title("Settings")
     if st.button("🗑️ Clear Chat", use_container_width=True):
@@ -66,11 +62,10 @@ with st.sidebar:
     </div>
     """, unsafe_allow_html=True)
 
-# --- 4. Main Title ---
+# --- 4. Content ---
 st.title("Dev Bot")
 st.caption("Emotional AI Companion (Gujarati / English)")
 
-# --- 5. API Setup ---
 try:
     GOOGLE_API_KEY = st.secrets["GOOGLE_API_KEY"]
     genai.configure(api_key=GOOGLE_API_KEY)
@@ -79,7 +74,7 @@ except:
     st.error("Error: Please check API Key.")
     st.stop()
 
-# --- 6. Chat Logic ---
+# --- 5. Chat ---
 if "messages" not in st.session_state:
     st.session_state.messages = [
         {"role": "assistant", "content": "Hello! I am Dev Bot. (ગુજરાતીમાં વાત કરવા માટે તૈયાર છું.)"}
@@ -90,6 +85,7 @@ for message in st.session_state.messages:
     with st.chat_message(message["role"], avatar=avatar):
         st.markdown(message["content"])
 
+# --- 6. Input & Response ---
 if user_input := st.chat_input("Message Dev Bot..."):
     with st.chat_message("user", avatar="👤"):
         st.markdown(user_input)
