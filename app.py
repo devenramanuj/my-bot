@@ -10,107 +10,74 @@ st.set_page_config(
 
 # --- 2. Theme Logic ---
 if "theme" not in st.session_state:
-    st.session_state.theme = False
+    st.session_state.theme = False # Default is Light Mode
 
 def toggle_theme():
     st.session_state.theme = not st.session_state.theme
 
+# --- 3. Color Settings (અહીં સુધારો કર્યો છે) ---
 if st.session_state.theme:
+    # 🌙 Night Mode (Dark)
     main_bg = "#0E1117"
-    text_color = "#E0E0E0"
-    title_color = "#00C6FF"
+    text_color = "#FFFFFF"   # સફેદ અક્ષર
+    title_color = "#00C6FF"  # નિયોન બ્લુ
+    input_bg = "#262730"
 else:
-    main_bg = "#FFFFFF"
-    text_color = "#000000"
-    title_color = "#00008B"
+    # ☀️ Day Mode (Light)
+    main_bg = "#FFFFFF"      # સફેદ બેકગ્રાઉન્ડ
+    text_color = "#000000"   # કાળા અક્ષર (Black)
+    title_color = "#00008B"  # ઘાટો વાદળી
+    input_bg = "#F0F2F6"
 
-# --- 3. SUPER STRONG CSS ---
+# --- 4. CSS Styling ---
 st.markdown(f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap');
 
-    /* કલર્સ */
+    /* 1. બેકગ્રાઉન્ડ અને ટેક્સ્ટ કલર */
     .stApp {{
         background-color: {main_bg} !important;
         color: {text_color} !important;
     }}
+
+    /* 2. બધા લખાણને કલર આપો (p, div, span, caption) */
+    p, div, span, li, .stMarkdown, .stCaption {{
+        color: {text_color} !important;
+    }}
     
+    /* 3. ટાઈટલ */
     h1 {{
         font-family: 'Orbitron', sans-serif !important;
         color: {title_color} !important;
         text-align: center;
-        font-size: 2.5rem !important;
+        font-size: 2.8rem !important;
         margin-top: -10px;
     }}
 
-    .dev-text {{
-        text-align: center;
-        color: {text_color};
-        font-size: 13px;
-        opacity: 0.8;
-        margin-bottom: 10px;
-    }}
-
-    /* ================================================= */
-    /* 🛑 ULTIMATE HIDDEN MODE (બધું જ સાફ)            */
-    /* ================================================= */
-    
-    /* 1. Streamlit Header (ઉપરની પટ્ટી) */
-    header[data-testid="stHeader"] {{
-        display: none !important;
-        visibility: hidden !important;
-    }}
-
-    /* 2. Toolbar (જમણી બાજુના 3 ટપકાં & મેનુ) */
-    div[data-testid="stToolbar"] {{
-        display: none !important;
-        visibility: hidden !important;
-    }}
-
-    /* 3. Decoration (રંગબેરંગી લાઈન) */
-    div[data-testid="stDecoration"] {{
-        display: none !important;
-        visibility: hidden !important;
-    }}
-
-    /* 4. Status Widget (Manage App Button - જમણે નીચે) */
-    div[data-testid="stStatusWidget"] {{
-        display: none !important;
-        visibility: hidden !important;
-    }}
-
-    /* 5. Footer (Made with Streamlit) */
-    footer {{
-        display: none !important;
-        visibility: hidden !important;
-    }}
-
-    /* 6. ખાસ Deploy Button */
-    .stDeployButton {{
-        display: none !important;
-        visibility: hidden !important;
-    }}
-    
-    /* ================================================= */
-
-    /* મોબાઈલ સાઈડબાર મેનુ બટન (આ રાખવું પડશે નહિતર મેનુ નહીં ખૂલે) */
+    /* 4. મોબાઈલ મેનુ બટનનો કલર */
     [data-testid="stSidebarCollapsedControl"] {{
-        display: block !important;
-        visibility: visible !important;
         color: {text_color} !important;
-        top: 15px !important;
-        z-index: 999999 !important;
+        display: block !important;
+        z-index: 99999 !important;
     }}
     
-    /* મોબાઈલમાં જગ્યા સેટ કરવા */
+    /* 5. હેડર, ફૂટર છુપાવો */
+    [data-testid="stToolbar"], 
+    [data-testid="stDecoration"], 
+    footer, 
+    header {{
+        visibility: hidden !important;
+        display: none !important;
+    }}
+
     .block-container {{
-        padding-top: 3rem !important;
+        padding-top: 2rem !important;
         padding-bottom: 5rem !important;
     }}
     </style>
     """, unsafe_allow_html=True)
 
-# --- 4. Layout Elements ---
+# --- 5. Layout Elements ---
 
 # Title
 st.markdown(f"""
@@ -120,9 +87,9 @@ st.markdown(f"""
     </h1>
     """, unsafe_allow_html=True)
 
-# Info
+# Developer Info (કલર વેરિયેબલ સાથે)
 st.markdown(f"""
-    <div class="dev-text">
+    <div style='text-align: center; color: {text_color}; font-size: 13px; margin-bottom: 5px; opacity: 0.9;'>
         Developed by <b>Devendra Ramanuj</b> | 📱 9276505035
     </div>
     """, unsafe_allow_html=True)
@@ -132,14 +99,14 @@ col1, col2, col3 = st.columns([1, 2, 1])
 with col2:
     mode = st.toggle("🌗 Day / Night Mode", value=st.session_state.theme, on_change=toggle_theme)
 
-# --- 5. Sidebar ---
+# --- 6. Sidebar ---
 with st.sidebar:
     st.title("Settings")
     if st.button("🗑️ Clear Chat", use_container_width=True):
         st.session_state.messages = []
         st.rerun()
 
-# --- 6. API Setup ---
+# --- 7. API Setup ---
 try:
     GOOGLE_API_KEY = st.secrets["GOOGLE_API_KEY"]
     genai.configure(api_key=GOOGLE_API_KEY)
@@ -148,7 +115,7 @@ except:
     st.error("Error: Please check API Key.")
     st.stop()
 
-# --- 7. Chat Logic ---
+# --- 8. Chat Logic ---
 if "messages" not in st.session_state:
     st.session_state.messages = [
         {"role": "assistant", "content": "જયશ્રી કૃષ્ણ! 🙏 હું દેવ બોટ છું. બોલો, આજે હું તમારી શું સેવા કરું?"}
@@ -159,7 +126,7 @@ for message in st.session_state.messages:
     with st.chat_message(message["role"], avatar=avatar):
         st.markdown(message["content"])
 
-# --- 8. Input ---
+# --- 9. Input ---
 if user_input := st.chat_input("Ask Dev Bot..."):
     with st.chat_message("user", avatar="👤"):
         st.markdown(user_input)
