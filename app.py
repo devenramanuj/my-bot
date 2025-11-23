@@ -24,7 +24,7 @@ You are a deeply empathetic and caring AI companion.
 """
 
 model = genai.GenerativeModel(
-    model_name="gemini-1.5-flash",
+    model_name="gemini-pro",
     system_instruction=system_instruction
 )
 
@@ -53,3 +53,4 @@ if user_input := st.chat_input("અહીં લખો..."):
     except Exception as e:
 
         st.error(f"સાચી એરર આ છે: {e}")
+
