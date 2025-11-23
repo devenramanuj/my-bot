@@ -21,12 +21,14 @@ if st.session_state.theme:
     main_bg = "#0E1117"
     text_color = "#FFFFFF"
     title_color = "#00C6FF"
+    btn_bg = "rgba(255, 255, 255, 0.1)" # બટનનું બેકગ્રાઉન્ડ (Dark Mode)
 else:
     main_bg = "#FFFFFF"
     text_color = "#000000"
     title_color = "#00008B"
+    btn_bg = "rgba(0, 0, 0, 0.05)" # બટનનું બેકગ્રાઉન્ડ (Light Mode)
 
-# --- 3. CSS Styling (Menu Fix) ---
+# --- 3. CSS Styling (Mobile Fix) ---
 st.markdown(f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap');
@@ -46,23 +48,39 @@ st.markdown(f"""
         text-align: center;
         font-size: 3rem !important;
         letter-spacing: 3px;
-        margin-top: 10px; /* થોડી જગ્યા આપી જેથી મેનુ બટન નડે નહીં */
+        margin-top: 20px; /* મેનુ બટન માટે જગ્યા છોડી */
     }}
 
     /* -------------------------------------------------- */
-    /* 🛑 MENU BUTTON FIX (આ મહત્વનું છે)               */
+    /* 🛑 MOBILE MENU BUTTON (FLOATING STYLE)           */
     /* -------------------------------------------------- */
     [data-testid="stSidebarCollapsedControl"] {{
-        display: block !important;
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
         visibility: visible !important;
-        position: fixed !important; /* આને ફિક્સ કરી દીધું */
-        top: 15px !important;
-        left: 15px !important;
-        z-index: 1000000 !important; /* સૌથી ઉપર */
+        
+        /* Position Fixed = સ્ક્રીન પર ચોંટાડી દેવું */
+        position: fixed !important;
+        top: 10px !important;
+        left: 10px !important;
+        
+        /* Size & Look */
+        width: 40px !important;
+        height: 40px !important;
+        background-color: {btn_bg} !important; /* પાછળ આછો કલર */
+        border-radius: 50% !important; /* ગોળ બટન */
+        
+        /* Layering */
+        z-index: 1000000 !important;
         color: {text_color} !important;
-        background-color: rgba(128, 128, 128, 0.2); /* થોડું બેકગ્રાઉન્ડ */
-        padding: 5px;
-        border-radius: 5px;
+        border: 1px solid {text_color} !important; /* બોર્ડર આપી એટલે દેખાય જ */
+    }}
+    
+    /* મેનુ આઈકન (Arrows) નો કલર */
+    [data-testid="stSidebarCollapsedControl"] svg {{
+        fill: {text_color} !important;
+        stroke: {text_color} !important;
     }}
     
     /* Hide Streamlit Elements */
@@ -72,7 +90,7 @@ st.markdown(f"""
     }}
 
     .block-container {{
-        padding-top: 3rem !important; /* ટાઈટલ અને મેનુ માટે જગ્યા */
+        padding-top: 4rem !important; /* કન્ટેન્ટ નીચે ઉતાર્યો */
         padding-bottom: 5rem !important;
     }}
     </style>
@@ -116,10 +134,10 @@ with st.sidebar:
     if uploaded_file is not None:
         if uploaded_file.name.endswith(".pdf"):
             file_type = "pdf"
-            st.info("📄 PDF File Detected")
-            with st.spinner("Reading PDF..."):
+            st.info("📄 PDF Detected")
+            with st.spinner("Processing..."):
                 extracted_text = get_pdf_text(uploaded_file)
-                st.success("PDF Loaded!")
+                st.success("Loaded!")
         else:
             file_type = "image"
             image = Image.open(uploaded_file)
@@ -165,7 +183,7 @@ if user_input := st.chat_input("Ask DEV..."):
                     response = model.generate_content([user_input, image])
                     response_text = response.text
                 elif uploaded_file is not None and file_type == "pdf":
-                    prompt = f"PDF Content:\n{extracted_text}\n\nQuestion: {user_input}"
+                    prompt = f"PDF: {extracted_text}\n\nQ: {user_input}"
                     response = model.generate_content(prompt)
                     response_text = response.text
                 else:
