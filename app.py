@@ -2,8 +2,9 @@ import streamlit as st
 import google.generativeai as genai
 from PIL import Image
 import PyPDF2
-from gtts import gTTS # અવાજ માટે
+from gtts import gTTS
 import io
+from streamlit_mic_recorder import speech_to_text # માઈક માટે
 
 # --- 1. Page Config ---
 st.set_page_config(
@@ -48,7 +49,12 @@ st.markdown(f"""
         text-align: center;
         font-size: 3rem !important;
         letter-spacing: 3px;
-        margin-top: -10px;
+        margin-top: 10px;
+    }}
+    
+    /* માઈક બટનને સુંદર બનાવવા */
+    .stButton button {{
+        border-radius: 20px;
     }}
 
     /* Hide Elements */
@@ -79,19 +85,36 @@ st.markdown(f"""
     </div>
     """, unsafe_allow_html=True)
 
-# --- 5. MENU (Settings) ---
-with st.expander("⚙️ સેટિંગ્સ (Settings)", expanded=False):
+# --- 5. MENU & VOICE INPUT ---
+voice_input = None # અવાજ માટેનું વેરિયેબલ
+
+with st.expander("⚙️ સેટિંગ્સ અને માઈક (Menu)", expanded=False):
+    
+    # --- MIC BUTTON ---
+    st.write("###### 🎤 Voice Chat (બોલવા માટે દબાવો)")
+    # આ બટન દબાવવાથી રેકોર્ડિંગ શરૂ થશે
+    voice_text = speech_to_text(
+        language='gu-IN', # ગુજરાતી ભાષા સેટ કરી
+        start_prompt="🔴 રેકોર્ડિંગ ચાલુ કરો",
+        stop_prompt="✅ બોલાઈ ગયું (મોકલો)",
+        just_once=True,
+        key='mic'
+    )
+    
+    if voice_text:
+        voice_input = voice_text # જે બોલ્યા તે ટેક્સ્ટમાં આવી ગયું
+
+    st.divider()
+
     st.write("###### 🎨 Theme")
     st.toggle("🌗 Day / Night Mode", value=st.session_state.theme, on_change=toggle_theme)
     
-    st.divider()
+    st.write("###### 📂 Upload File")
+    uploaded_file = st.file_uploader("File", type=["jpg", "png", "jpeg", "pdf"], label_visibility="collapsed")
     
-    st.write("###### 📂 Upload File (Image / PDF)")
-    uploaded_file = st.file_uploader("Choose file", type=["jpg", "png", "jpeg", "pdf"], label_visibility="collapsed")
-    
+    # File Processing
     file_type = ""
     extracted_text = ""
-    
     def get_pdf_text(pdf_file):
         pdf_reader = PyPDF2.PdfReader(pdf_file)
         text = ""
@@ -102,12 +125,12 @@ with st.expander("⚙️ સેટિંગ્સ (Settings)", expanded=False):
     if uploaded_file is not None:
         if uploaded_file.name.endswith(".pdf"):
             file_type = "pdf"
-            st.info("📄 PDF Detected")
             extracted_text = get_pdf_text(uploaded_file)
+            st.success("PDF Ready!")
         else:
             file_type = "image"
             image = Image.open(uploaded_file)
-            st.image(image, caption="Uploaded Image", use_container_width=True)
+            st.image(image, width=100)
 
     st.divider()
     if st.button("🗑️ Clear Chat", use_container_width=True):
@@ -126,68 +149,73 @@ except:
 # --- 7. Chat Logic ---
 if "messages" not in st.session_state:
     st.session_state.messages = [
-        {"role": "assistant", "content": "જયશ્રી કૃષ્ણ! 🙏 હું DEV છું. હવે હું બોલી પણ શકું છું!"}
+        {"role": "assistant", "content": "જયશ્રી કૃષ્ણ! 🙏 હું DEV છું. હવે તમે મારી સાથે બોલીને પણ વાત કરી શકો છો!"}
     ]
 
 for message in st.session_state.messages:
     avatar = "🤖" if message["role"] == "assistant" else "👤"
     with st.chat_message(message["role"], avatar=avatar):
         st.markdown(message["content"])
-        
-        # જો મેસેજમાં ઓડિયો હોય તો બતાવો
         if "audio" in message:
             st.audio(message["audio"], format="audio/mp3")
 
-# --- 8. Input & Response ---
-if user_input := st.chat_input("Ask DEV..."):
-    with st.chat_message("user", avatar="👤"):
-        st.markdown(user_input)
-    st.session_state.messages.append({"role": "user", "content": user_input})
+# --- 8. INPUT HANDLING (Voice OR Text) ---
 
+final_input = None
+
+# જો માઈકથી બોલ્યા હોય તો
+if voice_input:
+    final_input = voice_input
+# જો લખ્યું હોય તો
+elif chat_input := st.chat_input("Ask DEV..."):
+    final_input = chat_input
+
+# જો કોઈ પણ ઈનપુટ મળ્યું હોય તો પ્રોસેસ કરો
+if final_input:
+    # 1. યુઝરનો મેસેજ બતાવો
+    with st.chat_message("user", avatar="👤"):
+        st.markdown(final_input)
+    st.session_state.messages.append({"role": "user", "content": final_input})
+
+    # 2. AI જવાબ આપે છે
     try:
         with st.chat_message("assistant", avatar="🤖"):
             with st.spinner("વિચારી રહ્યો છું..."):
                 
-                # AI જવાબ મેળવે છે
                 response_text = ""
                 if uploaded_file is not None and file_type == "image":
                     image = Image.open(uploaded_file)
-                    response = model.generate_content([user_input, image])
+                    response = model.generate_content([final_input, image])
                     response_text = response.text
                 elif uploaded_file is not None and file_type == "pdf":
-                    prompt = f"PDF: {extracted_text}\n\nQ: {user_input}"
+                    prompt = f"PDF: {extracted_text}\n\nQ: {final_input}"
                     response = model.generate_content(prompt)
                     response_text = response.text
                 else:
                     chat_history = []
                     for m in st.session_state.messages:
-                        if m["role"] != "system" and "audio" not in m: # ઓડિયો ડેટા ન મોકલાય
+                        if m["role"] != "system" and "audio" not in m:
                             role = "model" if m["role"] == "assistant" else "user"
                             chat_history.append({"role": role, "parts": [m["content"]]})
                     response = model.generate_content(chat_history)
                     response_text = response.text
 
-                # ટેક્સ્ટ બતાવો
                 st.markdown(response_text)
                 
-                # --- VOICE GENERATION (અહીં અવાજ બને છે) ---
-                # ગુજરાતી ભાષામાં બોલવા માટે 'gu'
+                # Voice Output
                 try:
                     tts = gTTS(text=response_text, lang='gu') 
                     audio_bytes = io.BytesIO()
                     tts.write_to_fp(audio_bytes)
                     audio_bytes.seek(0)
-                    
                     st.audio(audio_bytes, format="audio/mp3")
                     
-                    # મેસેજ સેવ કરો (ઓડિયો સાથે)
                     st.session_state.messages.append({
                         "role": "assistant", 
                         "content": response_text,
-                        "audio": audio_bytes # ઓડિયો સેવ કર્યો
+                        "audio": audio_bytes
                     })
                 except:
-                    # જો અવાજ ન બને તો માત્ર ટેક્સ્ટ સેવ કરો
                     st.session_state.messages.append({
                         "role": "assistant", 
                         "content": response_text
