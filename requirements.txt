@@ -1,5 +1,6 @@
-streamlit
+streamlit>=1.40.0
 google-generativeai>=0.7.0
 Pillow
 PyPDF2
 gTTS
+duckduckgo-search
