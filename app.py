@@ -24,7 +24,7 @@ else:
     text_color = "#000000"
     title_color = "#00008B"
 
-# --- 3. CSS (MOBILE FIX) ---
+# --- 3. SUPER STRONG CSS ---
 st.markdown(f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap');
@@ -43,7 +43,6 @@ st.markdown(f"""
         margin-top: -10px;
     }}
 
-    /* ડેવલપર ટેક્સ્ટ */
     .dev-text {{
         text-align: center;
         color: {text_color};
@@ -52,56 +51,60 @@ st.markdown(f"""
         margin-bottom: 10px;
     }}
 
-    /* ========================================= */
-    /* 🛑 MOBILE CLEANER (ખાસ મોબાઈલ માટે)    */
-    /* ========================================= */
+    /* ================================================= */
+    /* 🛑 ULTIMATE HIDDEN MODE (બધું જ સાફ)            */
+    /* ================================================= */
     
-    /* 1. નીચે જમણી બાજુનું Manage App બટન */
-    .stApp > header {{
+    /* 1. Streamlit Header (ઉપરની પટ્ટી) */
+    header[data-testid="stHeader"] {{
         display: none !important;
         visibility: hidden !important;
     }}
-    
+
+    /* 2. Toolbar (જમણી બાજુના 3 ટપકાં & મેનુ) */
+    div[data-testid="stToolbar"] {{
+        display: none !important;
+        visibility: hidden !important;
+    }}
+
+    /* 3. Decoration (રંગબેરંગી લાઈન) */
+    div[data-testid="stDecoration"] {{
+        display: none !important;
+        visibility: hidden !important;
+    }}
+
+    /* 4. Status Widget (Manage App Button - જમણે નીચે) */
     div[data-testid="stStatusWidget"] {{
-        visibility: hidden !important;
         display: none !important;
-        opacity: 0 !important;
-        height: 0 !important;
-        width: 0 !important;
-        pointer-events: none !important;
+        visibility: hidden !important;
     }}
 
-    /* 2. ઉપરનું હેડર અને ડેકોરેશન */
-    [data-testid="stDecoration"], [data-testid="stToolbar"] {{
-        visibility: hidden !important;
-        display: none !important;
-    }}
-    
-    /* 3. ફુટર */
+    /* 5. Footer (Made with Streamlit) */
     footer {{
-        visibility: hidden !important;
         display: none !important;
-    }}
-    
-    /* 4. હેમ્બર્ગર મેનુ (3 ટપકાં) */
-    #MainMenu {{
         visibility: hidden !important;
-        display: none !important;
     }}
-    
-    /* ========================================= */
 
-    /* મોબાઈલ મેનુ બટન (Sidebar Toggle) દેખાવું જોઈએ */
+    /* 6. ખાસ Deploy Button */
+    .stDeployButton {{
+        display: none !important;
+        visibility: hidden !important;
+    }}
+    
+    /* ================================================= */
+
+    /* મોબાઈલ સાઈડબાર મેનુ બટન (આ રાખવું પડશે નહિતર મેનુ નહીં ખૂલે) */
     [data-testid="stSidebarCollapsedControl"] {{
         display: block !important;
         visibility: visible !important;
         color: {text_color} !important;
         top: 15px !important;
-        z-index: 99999 !important;
+        z-index: 999999 !important;
     }}
     
+    /* મોબાઈલમાં જગ્યા સેટ કરવા */
     .block-container {{
-        padding-top: 2rem !important;
+        padding-top: 3rem !important;
         padding-bottom: 5rem !important;
     }}
     </style>
