@@ -4,6 +4,7 @@ from PIL import Image
 import PyPDF2
 from gtts import gTTS
 import io
+from duckduckgo_search import DDGS # ઈન્ટરનેટ સર્ચ માટે
 
 # --- 1. Page Config ---
 st.set_page_config(page_title="DEV", page_icon="🤖", layout="centered")
@@ -16,12 +17,10 @@ def toggle_theme():
     st.session_state.theme = not st.session_state.theme
 
 if st.session_state.theme:
-    # 🌙 Night Mode
     main_bg = "#0E1117"
     text_color = "#FFFFFF"
     title_color = "#00C6FF"
 else:
-    # ☀️ Day Mode
     main_bg = "#FFFFFF"
     text_color = "#000000"
     title_color = "#00008B"
@@ -30,18 +29,22 @@ else:
 st.markdown(f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap');
-
-    .stApp {{
-        background-color: {main_bg} !important;
-        color: {text_color} !important;
-    }}
+    .stApp {{ background-color: {main_bg} !important; color: {text_color} !important; }}
     
-    /* બધા ટેક્સ્ટ કલર */
-    p, div, span, li, label, h1, h2, h3, h4, h5, h6, .stMarkdown {{
+    p, div, span, li, label, h1, h2, h3, h4, h5, h6, .stMarkdown {{ color: {text_color} !important; }}
+    
+    /* Settings Menu Clean Look */
+    .streamlit-expanderHeader {{
         color: {text_color} !important;
+        border: 1px solid {text_color};
+        border-radius: 10px;
+    }}
+    .streamlit-expanderContent {{
+        border: 1px solid {text_color};
+        border-top: none;
+        border-radius: 0 0 10px 10px;
     }}
 
-    /* Title Font */
     h1 {{
         font-family: 'Orbitron', sans-serif !important;
         color: {title_color} !important;
@@ -49,26 +52,9 @@ st.markdown(f"""
         font-size: 3rem !important;
         margin-top: 10px;
     }}
-    
-    /* Expander (Menu) Styling - Border Color Fix */
-    .streamlit-expanderHeader {{
-        color: {text_color} !important;
-        background-color: transparent !important;
-        border: 1px solid {text_color};
-        border-radius: 10px;
-    }}
-    
-    .streamlit-expanderContent {{
-        background-color: transparent !important;
-        border: 1px solid {text_color};
-        border-top: none;
-        border-radius: 0 0 10px 10px;
-    }}
 
-    /* Hide Extra Elements */
-    [data-testid="stSidebar"], [data-testid="stToolbar"], footer, header {{
-        display: none !important;
-    }}
+    /* Hide Elements */
+    [data-testid="stSidebar"], [data-testid="stToolbar"], footer, header {{ display: none !important; }}
     .block-container {{ padding-top: 2rem !important; padding-bottom: 5rem !important; }}
     </style>
     """, unsafe_allow_html=True)
@@ -86,20 +72,25 @@ st.markdown(f"""
 
 st.write("---")
 
-# --- 5. NEW MENU (Expander) ---
-# Popover કાઢી નાખ્યું, હવે Expander છે જે કલર બગાડશે નહીં.
-with st.expander("⚙️ સેટિંગ્સ અને ફાઈલ અપલોડ (Settings)"):
+# --- 5. Settings Menu ---
+# ઈન્ટરનેટ સર્ચ માટેનું વેરિયેબલ
+web_search = False
+
+with st.expander("⚙️ સેટિંગ્સ (Settings)"):
     
-    st.write("###### 🎨 Theme Change")
-    st.toggle("🌗 Day / Night Mode", value=st.session_state.theme, on_change=toggle_theme)
+    col_a, col_b = st.columns(2)
+    with col_a:
+        st.write("###### 🎨 Theme")
+        st.toggle("🌗 Mode", value=st.session_state.theme, on_change=toggle_theme)
+    with col_b:
+        st.write("###### 🌍 Internet")
+        web_search = st.toggle("Live Search") # ઈન્ટરનેટની સ્વિચ
     
     st.divider()
-    
-    st.write("###### 📂 Files (Image/PDF)")
+    st.write("###### 📂 Files")
     uploaded_file = st.file_uploader("Upload", type=["jpg", "pdf"])
     
     st.divider()
-    
     if st.button("🗑️ Reset Chat"):
         st.session_state.messages = []
         st.rerun()
@@ -113,10 +104,23 @@ except:
     st.error("Error: Please check API Key.")
     st.stop()
 
-# --- 7. Chat Logic ---
-if "messages" not in st.session_state:
+# --- 7. Functions ---
+
+# ઈન્ટરનેટ સર્ચ ફંક્શન
+def search_internet(query):
+    try:
+        with DDGS() as ddgs:
+            results = list(ddgs.text(query, max_results=3))
+            if results:
+                return "\n".join([f"- {r['body']}" for r in results])
+            return "No results found."
+    except:
+        return "Search failed."
+
+# --- 8. Chat Logic ---
+if "messages" not in st.session_state.messages:
     st.session_state.messages = [
-        {"role": "assistant", "content": "જયશ્રી કૃષ્ણ! 🙏 હું DEV છું. બોલો અથવા લખો!"}
+        {"role": "assistant", "content": "જયશ્રી કૃષ્ણ! 🙏 હું DEV છું. બોલો!"}
     ]
 
 for message in st.session_state.messages:
@@ -126,7 +130,7 @@ for message in st.session_state.messages:
         if "audio" in message:
             st.audio(message["audio"], format="audio/mp3")
 
-# --- 8. Input Processing ---
+# --- 9. Input Processing ---
 if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું માઈક 🎙️ વાપરો)"):
     
     with st.chat_message("user", avatar="👤"):
@@ -138,12 +142,22 @@ if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું મ�
             with st.spinner("વિચારી રહ્યો છું..."):
                 response_text = ""
                 
-                # Image Logic
-                if uploaded_file is not None and uploaded_file.name.endswith(('.jpg', '.png', '.jpeg')):
+                # 1. Internet Search Logic
+                if web_search:
+                    st.toast("Searching Internet... 🌍")
+                    search_results = search_internet(user_input)
+                    # સર્ચ રિઝલ્ટ + યુઝરનો સવાલ બંને AI ને આપો
+                    prompt = f"Use this internet information to answer the question.\n\nInfo: {search_results}\n\nQuestion: {user_input}\n\nAnswer in Gujarati."
+                    response = model.generate_content(prompt)
+                    response_text = response.text
+
+                # 2. Image Logic
+                elif uploaded_file is not None and uploaded_file.name.endswith(('.jpg', '.png', '.jpeg')):
                     image = Image.open(uploaded_file)
                     response = model.generate_content([user_input, image])
                     response_text = response.text
-                # PDF Logic
+                
+                # 3. PDF Logic
                 elif uploaded_file is not None and uploaded_file.name.endswith('.pdf'):
                     pdf_reader = PyPDF2.PdfReader(uploaded_file)
                     pdf_text = ""
@@ -152,7 +166,8 @@ if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું મ�
                     prompt = f"PDF Context:\n{pdf_text}\n\nQuestion: {user_input}"
                     response = model.generate_content(prompt)
                     response_text = response.text
-                # Text Logic
+                
+                # 4. Normal Chat
                 else:
                     chat_history = []
                     for m in st.session_state.messages:
