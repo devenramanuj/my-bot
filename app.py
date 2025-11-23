@@ -8,14 +8,13 @@ st.set_page_config(
     layout="centered"
 )
 
-# --- 2. Dynamic CSS (Theme Logic) ---
+# --- 2. Theme Logic ---
 if "theme" not in st.session_state:
     st.session_state.theme = False
 
 def toggle_theme():
     st.session_state.theme = not st.session_state.theme
 
-# --- 3. CSS Styling (LOGOS REMOVED) ---
 if st.session_state.theme:
     main_bg = "#0E1117"
     text_color = "#E0E0E0"
@@ -25,6 +24,7 @@ else:
     text_color = "#000000"
     title_color = "#00008B"
 
+# --- 3. CSS (MOBILE FIX) ---
 st.markdown(f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap');
@@ -35,12 +35,11 @@ st.markdown(f"""
         color: {text_color} !important;
     }}
     
-    /* ટાઈટલ */
     h1 {{
         font-family: 'Orbitron', sans-serif !important;
         color: {title_color} !important;
         text-align: center;
-        font-size: 2.8rem !important;
+        font-size: 2.5rem !important;
         margin-top: -10px;
     }}
 
@@ -53,37 +52,46 @@ st.markdown(f"""
         margin-bottom: 10px;
     }}
 
-    /* ------------------------------------------ */
-    /* 🛑 લોગો હટાવવાનું મુખ્ય સેટિંગ (IMP)   */
-    /* ------------------------------------------ */
+    /* ========================================= */
+    /* 🛑 MOBILE CLEANER (ખાસ મોબાઈલ માટે)    */
+    /* ========================================= */
     
-    /* 1. જમણી બાજુ નીચેનું 'Manage App' બટન */
+    /* 1. નીચે જમણી બાજુનું Manage App બટન */
+    .stApp > header {{
+        display: none !important;
+        visibility: hidden !important;
+    }}
+    
     div[data-testid="stStatusWidget"] {{
         visibility: hidden !important;
         display: none !important;
+        opacity: 0 !important;
+        height: 0 !important;
+        width: 0 !important;
+        pointer-events: none !important;
     }}
 
-    /* 2. નીચેનું 'Made with Streamlit' ફુટર */
+    /* 2. ઉપરનું હેડર અને ડેકોરેશન */
+    [data-testid="stDecoration"], [data-testid="stToolbar"] {{
+        visibility: hidden !important;
+        display: none !important;
+    }}
+    
+    /* 3. ફુટર */
     footer {{
         visibility: hidden !important;
         display: none !important;
     }}
-
-    /* 3. ઉપરનું મેનુ (3 ટપકાં) */
+    
+    /* 4. હેમ્બર્ગર મેનુ (3 ટપકાં) */
     #MainMenu {{
         visibility: hidden !important;
         display: none !important;
     }}
     
-    /* 4. ઉપરની પટ્ટી */
-    header {{
-        visibility: hidden !important;
-        display: none !important;
-    }}
-    
-    /* ------------------------------------------ */
+    /* ========================================= */
 
-    /* મોબાઈલ મેનુ બટન દેખાવું જોઈએ */
+    /* મોબાઈલ મેનુ બટન (Sidebar Toggle) દેખાવું જોઈએ */
     [data-testid="stSidebarCollapsedControl"] {{
         display: block !important;
         visibility: visible !important;
@@ -99,7 +107,7 @@ st.markdown(f"""
     </style>
     """, unsafe_allow_html=True)
 
-# --- 4. Main Layout ---
+# --- 4. Layout Elements ---
 
 # Title
 st.markdown(f"""
@@ -109,7 +117,7 @@ st.markdown(f"""
     </h1>
     """, unsafe_allow_html=True)
 
-# Developer Info
+# Info
 st.markdown(f"""
     <div class="dev-text">
         Developed by <b>Devendra Ramanuj</b> | 📱 9276505035
@@ -120,8 +128,6 @@ st.markdown(f"""
 col1, col2, col3 = st.columns([1, 2, 1])
 with col2:
     mode = st.toggle("🌗 Day / Night Mode", value=st.session_state.theme, on_change=toggle_theme)
-
-st.write("")
 
 # --- 5. Sidebar ---
 with st.sidebar:
@@ -150,7 +156,7 @@ for message in st.session_state.messages:
     with st.chat_message(message["role"], avatar=avatar):
         st.markdown(message["content"])
 
-# --- 8. Input & Response ---
+# --- 8. Input ---
 if user_input := st.chat_input("Ask Dev Bot..."):
     with st.chat_message("user", avatar="👤"):
         st.markdown(user_input)
