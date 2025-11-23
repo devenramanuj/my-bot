@@ -1,7 +1,7 @@
 import streamlit as st
 import google.generativeai as genai
 from PIL import Image
-import PyPDF2 # PDF વાંચવા માટે
+import PyPDF2
 
 # --- 1. Page Config ---
 st.set_page_config(
@@ -26,7 +26,7 @@ else:
     text_color = "#000000"
     title_color = "#00008B"
 
-# --- 3. CSS Styling ---
+# --- 3. CSS Styling (Menu Fix) ---
 st.markdown(f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap');
@@ -46,13 +46,23 @@ st.markdown(f"""
         text-align: center;
         font-size: 3rem !important;
         letter-spacing: 3px;
-        margin-top: -10px;
+        margin-top: 10px; /* થોડી જગ્યા આપી જેથી મેનુ બટન નડે નહીં */
     }}
 
+    /* -------------------------------------------------- */
+    /* 🛑 MENU BUTTON FIX (આ મહત્વનું છે)               */
+    /* -------------------------------------------------- */
     [data-testid="stSidebarCollapsedControl"] {{
-        color: {text_color} !important;
         display: block !important;
-        z-index: 99999 !important;
+        visibility: visible !important;
+        position: fixed !important; /* આને ફિક્સ કરી દીધું */
+        top: 15px !important;
+        left: 15px !important;
+        z-index: 1000000 !important; /* સૌથી ઉપર */
+        color: {text_color} !important;
+        background-color: rgba(128, 128, 128, 0.2); /* થોડું બેકગ્રાઉન્ડ */
+        padding: 5px;
+        border-radius: 5px;
     }}
     
     /* Hide Streamlit Elements */
@@ -62,7 +72,7 @@ st.markdown(f"""
     }}
 
     .block-container {{
-        padding-top: 2rem !important;
+        padding-top: 3rem !important; /* ટાઈટલ અને મેનુ માટે જગ્યા */
         padding-bottom: 5rem !important;
     }}
     </style>
@@ -87,8 +97,6 @@ with col2:
     mode = st.toggle("🌗 Day / Night Mode", value=st.session_state.theme, on_change=toggle_theme)
 
 # --- 5. Logic Functions ---
-
-# PDF માંથી લખાણ કાઢવાનું ફંક્શન
 def get_pdf_text(pdf_file):
     pdf_reader = PyPDF2.PdfReader(pdf_file)
     text = ""
@@ -96,25 +104,22 @@ def get_pdf_text(pdf_file):
         text += page.extract_text()
     return text
 
-# --- 6. Sidebar (Multi-File Uploader) ---
+# --- 6. Sidebar ---
 with st.sidebar:
     st.title("Settings")
-    
     st.markdown("### 📂 Upload File")
-    # અહીં Image અને PDF બંને અપલોડ થઈ શકશે
     uploaded_file = st.file_uploader("Upload Image or PDF", type=["jpg", "png", "jpeg", "pdf"])
     
     file_type = ""
     extracted_text = ""
     
     if uploaded_file is not None:
-        # ફાઈલનો પ્રકાર તપાસો
         if uploaded_file.name.endswith(".pdf"):
             file_type = "pdf"
             st.info("📄 PDF File Detected")
-            with st.spinner("PDF વાંચી રહ્યો છું..."):
+            with st.spinner("Reading PDF..."):
                 extracted_text = get_pdf_text(uploaded_file)
-                st.success("PDF વંચાઈ ગઈ! હવે પ્રશ્ન પૂછો.")
+                st.success("PDF Loaded!")
         else:
             file_type = "image"
             image = Image.open(uploaded_file)
@@ -137,7 +142,7 @@ except:
 # --- 8. Chat Logic ---
 if "messages" not in st.session_state:
     st.session_state.messages = [
-        {"role": "assistant", "content": "જયશ્રી કૃષ્ણ! 🙏 હું DEV છું. તમે મને ફોટો અથવા PDF મોકલી શકો છો."}
+        {"role": "assistant", "content": "જયશ્રી કૃષ્ણ! 🙏 હું DEV છું. (Image & PDF supported)."}
     ]
 
 for message in st.session_state.messages:
@@ -153,24 +158,16 @@ if user_input := st.chat_input("Ask DEV..."):
 
     try:
         with st.chat_message("assistant", avatar="🤖"):
-            with st.spinner("વિચારી રહ્યો છું..."):
-                
+            with st.spinner("Thinking..."):
                 response_text = ""
-
-                # કેસ 1: ફોટો અપલોડ હોય તો
                 if uploaded_file is not None and file_type == "image":
                     image = Image.open(uploaded_file)
                     response = model.generate_content([user_input, image])
                     response_text = response.text
-                
-                # કેસ 2: PDF અપલોડ હોય તો
                 elif uploaded_file is not None and file_type == "pdf":
-                    # PDF નું લખાણ + યુઝરનો સવાલ બંને મોકલો
-                    prompt = f"Here is the content of a PDF document:\n\n{extracted_text}\n\nUser Question: {user_input}"
+                    prompt = f"PDF Content:\n{extracted_text}\n\nQuestion: {user_input}"
                     response = model.generate_content(prompt)
                     response_text = response.text
-                    
-                # કેસ 3: માત્ર વાતો (Normal Chat)
                 else:
                     chat_history = []
                     for m in st.session_state.messages:
