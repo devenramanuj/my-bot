@@ -16,26 +16,57 @@ def toggle_theme():
     st.session_state.theme = not st.session_state.theme
 
 if st.session_state.theme:
+    # 🌙 Night Mode
     main_bg = "#0E1117"
     text_color = "#FFFFFF"
     title_color = "#00C6FF"
-    popover_bg = "#1E1E1E"
 else:
+    # ☀️ Day Mode
     main_bg = "#FFFFFF"
     text_color = "#000000"
     title_color = "#00008B"
-    popover_bg = "#F0F2F6"
 
-# --- 3. CSS Styling ---
+# --- 3. CSS Styling (Strong Color Fix) ---
 st.markdown(f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap');
-    .stApp {{ background-color: {main_bg} !important; color: {text_color} !important; }}
+
+    /* Main App Background */
+    .stApp {{
+        background-color: {main_bg} !important;
+        color: {text_color} !important;
+    }}
     
-    p, div, span, li, label, h1, h2, h3, h4, h5, h6 {{ color: {text_color} !important; }}
+    /* General Text Color */
+    p, div, span, li, label, h1, h2, h3, h4, h5, h6 {{
+        color: {text_color} !important;
+    }}
+
+    /* ----------------------------------------------------------- */
+    /* 🛑 SETTINGS MENU FIX (100% Readable)                      */
+    /* ----------------------------------------------------------- */
     
-    [data-testid="stPopoverBody"] {{ background-color: {popover_bg} !important; border: 1px solid {text_color}; }}
+    /* મેનુ બોક્સ હંમેશા સફેદ રહેશે */
+    div[data-testid="stPopoverBody"] {{
+        background-color: #FFFFFF !important;
+        border: 2px solid #000000 !important;
+    }}
+
+    /* મેનુની અંદરના તમામ અક્ષરો હંમેશા કાળા રહેશે */
+    div[data-testid="stPopoverBody"] * {{
+        color: #000000 !important; 
+        font-weight: 500 !important;
+    }}
     
+    /* મેનુની અંદરના બટન અને અપલોડર */
+    div[data-testid="stPopoverBody"] button {{
+        border: 1px solid #000000 !important;
+        color: #000000 !important;
+    }}
+
+    /* ----------------------------------------------------------- */
+
+    /* Title Font */
     h1 {{
         font-family: 'Orbitron', sans-serif !important;
         color: {title_color} !important;
@@ -44,8 +75,10 @@ st.markdown(f"""
         margin-top: 10px;
     }}
 
-    /* બધું છુપાવો */
-    [data-testid="stSidebar"], [data-testid="stToolbar"], footer, header {{ display: none !important; }}
+    /* Hide Extra Elements */
+    [data-testid="stSidebar"], [data-testid="stToolbar"], footer, header {{
+        display: none !important;
+    }}
     .block-container {{ padding-top: 2rem !important; padding-bottom: 5rem !important; }}
     </style>
     """, unsafe_allow_html=True)
@@ -66,6 +99,7 @@ st.write("---")
 # --- 5. Settings Menu ---
 col1, col2, col3 = st.columns([1, 2, 1])
 with col2:
+    # સેટિંગ્સ બટન
     with st.popover("⚙️ સેટિંગ્સ (Settings)", use_container_width=True):
         st.write("###### 🎨 Theme")
         st.toggle("🌗 Mode", value=st.session_state.theme, on_change=toggle_theme)
@@ -102,7 +136,6 @@ for message in st.session_state.messages:
             st.audio(message["audio"], format="audio/mp3")
 
 # --- 8. Input Processing ---
-# અહીં મેં પ્લેસહોલ્ડરમાં સ્પષ્ટ સૂચના લખી છે
 if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું માઈક 🎙️ વાપરો)"):
     
     with st.chat_message("user", avatar="👤"):
@@ -140,7 +173,7 @@ if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું મ�
 
                 st.markdown(response_text)
                 
-                # Voice Output (બોટ બોલશે)
+                # Voice Output
                 try:
                     tts = gTTS(text=response_text, lang='gu') 
                     audio_bytes = io.BytesIO()
