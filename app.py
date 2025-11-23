@@ -21,14 +21,12 @@ if st.session_state.theme:
     main_bg = "#0E1117"
     text_color = "#FFFFFF"
     title_color = "#00C6FF"
-    btn_bg = "rgba(255, 255, 255, 0.1)" # બટનનું બેકગ્રાઉન્ડ (Dark Mode)
 else:
     main_bg = "#FFFFFF"
     text_color = "#000000"
     title_color = "#00008B"
-    btn_bg = "rgba(0, 0, 0, 0.05)" # બટનનું બેકગ્રાઉન્ડ (Light Mode)
 
-# --- 3. CSS Styling (Mobile Fix) ---
+# --- 3. CSS Styling (Mobile Menu Fix) ---
 st.markdown(f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap');
@@ -48,49 +46,53 @@ st.markdown(f"""
         text-align: center;
         font-size: 3rem !important;
         letter-spacing: 3px;
-        margin-top: 20px; /* મેનુ બટન માટે જગ્યા છોડી */
+        margin-top: 10px;
     }}
 
-    /* -------------------------------------------------- */
-    /* 🛑 MOBILE MENU BUTTON (FLOATING STYLE)           */
-    /* -------------------------------------------------- */
-    [data-testid="stSidebarCollapsedControl"] {{
-        display: flex !important;
-        align-items: center;
-        justify-content: center;
-        visibility: visible !important;
-        
-        /* Position Fixed = સ્ક્રીન પર ચોંટાડી દેવું */
-        position: fixed !important;
-        top: 10px !important;
-        left: 10px !important;
-        
-        /* Size & Look */
-        width: 40px !important;
-        height: 40px !important;
-        background-color: {btn_bg} !important; /* પાછળ આછો કલર */
-        border-radius: 50% !important; /* ગોળ બટન */
-        
-        /* Layering */
-        z-index: 1000000 !important;
-        color: {text_color} !important;
-        border: 1px solid {text_color} !important; /* બોર્ડર આપી એટલે દેખાય જ */
+    /* ----------------------------------------------------------- */
+    /* 🛑 MOBILE MENU FIX (Invisible Header Strategy)            */
+    /* ----------------------------------------------------------- */
+    
+    /* 1. હેડરને ગાયબ કરવાને બદલે પારદર્શક (Transparent) બનાવો */
+    header[data-testid="stHeader"] {{
+        background-color: transparent !important;
+        z-index: 1 !important; /* કન્ટેન્ટની પાછળ */
     }}
     
-    /* મેનુ આઈકન (Arrows) નો કલર */
-    [data-testid="stSidebarCollapsedControl"] svg {{
-        fill: {text_color} !important;
-        stroke: {text_color} !important;
+    /* 2. પણ હેડરની અંદર રહેલા 3 ટપકાં (Toolbar) ને છુપાવો */
+    [data-testid="stToolbar"] {{
+        display: none !important;
     }}
     
-    /* Hide Streamlit Elements */
-    [data-testid="stToolbar"], [data-testid="stDecoration"], footer, header {{
-        visibility: hidden !important;
+    /* 3. Manage App બટનને છુપાવો */
+    div[data-testid="stStatusWidget"] {{
         display: none !important;
     }}
 
+    /* 4. ઉપરની રંગીન લાઈન છુપાવો */
+    [data-testid="stDecoration"] {{
+        display: none !important;
+    }}
+
+    /* 5. મેનુ બટન (Hamburger) ને ખાસ કલર અને પાવર આપો */
+    [data-testid="stSidebarCollapsedControl"] {{
+        display: block !important;
+        visibility: visible !important;
+        color: {text_color} !important; /* કાળો/સફેદ કલર */
+        background-color: rgba(128, 128, 128, 0.1); /* આછું બેકગ્રાઉન્ડ */
+        border-radius: 10px;
+        padding: 5px;
+        z-index: 999999 !important; /* સૌથી ઉપર */
+    }}
+    
+    /* ફુટર ગાયબ */
+    footer {{
+        display: none !important;
+    }}
+
+    /* કન્ટેન્ટને થોડું નીચે લો */
     .block-container {{
-        padding-top: 4rem !important; /* કન્ટેન્ટ નીચે ઉતાર્યો */
+        padding-top: 4rem !important;
         padding-bottom: 5rem !important;
     }}
     </style>
