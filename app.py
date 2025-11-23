@@ -4,7 +4,7 @@ from PIL import Image
 import PyPDF2
 from gtts import gTTS
 import io
-from duckduckgo_search import DDGS # ઈન્ટરનેટ સર્ચ માટે
+from duckduckgo_search import DDGS
 
 # --- 1. Page Config ---
 st.set_page_config(page_title="DEV", page_icon="🤖", layout="centered")
@@ -53,7 +53,6 @@ st.markdown(f"""
         margin-top: 10px;
     }}
 
-    /* Hide Elements */
     [data-testid="stSidebar"], [data-testid="stToolbar"], footer, header {{ display: none !important; }}
     .block-container {{ padding-top: 2rem !important; padding-bottom: 5rem !important; }}
     </style>
@@ -73,18 +72,16 @@ st.markdown(f"""
 st.write("---")
 
 # --- 5. Settings Menu ---
-# ઈન્ટરનેટ સર્ચ માટેનું વેરિયેબલ
 web_search = False
 
 with st.expander("⚙️ સેટિંગ્સ (Settings)"):
-    
     col_a, col_b = st.columns(2)
     with col_a:
         st.write("###### 🎨 Theme")
         st.toggle("🌗 Mode", value=st.session_state.theme, on_change=toggle_theme)
     with col_b:
         st.write("###### 🌍 Internet")
-        web_search = st.toggle("Live Search") # ઈન્ટરનેટની સ્વિચ
+        web_search = st.toggle("Live Search")
     
     st.divider()
     st.write("###### 📂 Files")
@@ -105,8 +102,6 @@ except:
     st.stop()
 
 # --- 7. Functions ---
-
-# ઈન્ટરનેટ સર્ચ ફંક્શન
 def search_internet(query):
     try:
         with DDGS() as ddgs:
@@ -117,8 +112,9 @@ def search_internet(query):
     except:
         return "Search failed."
 
-# --- 8. Chat Logic ---
-if "messages" not in st.session_state.messages:
+# --- 8. Chat Logic (Error Fixed Here) ---
+# આ લાઈનમાં સુધારો કર્યો છે:
+if "messages" not in st.session_state:
     st.session_state.messages = [
         {"role": "assistant", "content": "જયશ્રી કૃષ્ણ! 🙏 હું DEV છું. બોલો!"}
     ]
@@ -146,7 +142,6 @@ if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું મ�
                 if web_search:
                     st.toast("Searching Internet... 🌍")
                     search_results = search_internet(user_input)
-                    # સર્ચ રિઝલ્ટ + યુઝરનો સવાલ બંને AI ને આપો
                     prompt = f"Use this internet information to answer the question.\n\nInfo: {search_results}\n\nQuestion: {user_input}\n\nAnswer in Gujarati."
                     response = model.generate_content(prompt)
                     response_text = response.text
