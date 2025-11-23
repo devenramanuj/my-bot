@@ -21,13 +21,17 @@ def toggle_theme():
     st.session_state.theme = not st.session_state.theme
 
 if st.session_state.theme:
+    # 🌙 Night Mode
     main_bg = "#0E1117"
     text_color = "#FFFFFF"
     title_color = "#00C6FF"
+    popover_bg = "#1E1E1E" # મેનુનું બેકગ્રાઉન્ડ (Dark)
 else:
+    # ☀️ Day Mode
     main_bg = "#FFFFFF"
     text_color = "#000000"
     title_color = "#00008B"
+    popover_bg = "#F0F2F6" # મેનુનું બેકગ્રાઉન્ડ (Light)
 
 # --- 3. CSS Styling ---
 st.markdown(f"""
@@ -39,8 +43,15 @@ st.markdown(f"""
         color: {text_color} !important;
     }}
 
+    /* સામાન્ય લખાણ */
     p, div, span, li, .stMarkdown, .stCaption, h3, label {{
         color: {text_color} !important;
+    }}
+    
+    /* 🛑 POPOVER MENU COLOR FIX (આનાથી સેટિંગ્સ વંચાશે) */
+    [data-testid="stPopoverBody"] {{
+        background-color: {popover_bg} !important;
+        border: 1px solid {text_color};
     }}
     
     h1 {{
@@ -52,14 +63,15 @@ st.markdown(f"""
         margin-top: 10px;
     }}
     
-    /* માઈક બટનને મોટું અને સેન્ટરમાં કરવા */
+    /* માઈક બટન */
     .stButton button {{
         width: 100%;
         border-radius: 10px;
         font-weight: bold;
+        border: 1px solid {text_color};
     }}
 
-    /* Hide Elements */
+    /* બધું છુપાવો */
     [data-testid="stSidebar"], [data-testid="stSidebarCollapsedControl"], 
     [data-testid="stToolbar"], [data-testid="stDecoration"], footer, header {{
         display: none !important;
@@ -87,20 +99,18 @@ st.markdown(f"""
     </div>
     """, unsafe_allow_html=True)
 
-# --- 5. VOICE BUTTON (On Main Screen) ---
-# અહીં મેનુ નથી, સીધું બટન છે.
-st.write("---") # એક લાઈન દોરી
+# --- 5. VOICE BUTTON & SETTINGS ---
+st.write("---") 
 col_mic, col_sets = st.columns([2, 1])
 
 voice_input = None
 
 with col_mic:
-    # સીધું સ્ક્રીન પર માઈક
-    # start_prompt અને stop_prompt કાઢી નાખ્યા જેથી કન્ફ્યુઝન ન થાય
+    # માઈક બટન
     text = speech_to_text(
         language='gu-IN',
-        start_prompt="🎤 બોલવા માટે દબાવો (Speak)",
-        stop_prompt="⏹️ રોકવા માટે દબાવો (Stop)",
+        start_prompt="🎤 બોલવા માટે દબાવો",
+        stop_prompt="⏹️ બંધ કરીને મોકલો",
         just_once=True,
         key='mic_main'
     )
@@ -108,7 +118,7 @@ with col_mic:
         voice_input = text
 
 with col_sets:
-    # બાજુમાં નાનું સેટિંગ બટન
+    # સેટિંગ્સ મેનુ
     with st.popover("⚙️ સેટિંગ્સ"):
         st.write("###### 🎨 Theme")
         st.toggle("🌗 Mode", value=st.session_state.theme, on_change=toggle_theme)
@@ -120,27 +130,7 @@ with col_sets:
             st.session_state.messages = []
             st.rerun()
 
-# --- 6. File Logic ---
-file_type = ""
-extracted_text = ""
-def get_pdf_text(pdf_file):
-    pdf_reader = PyPDF2.PdfReader(pdf_file)
-    text = ""
-    for page in pdf_reader.pages:
-        text += page.extract_text()
-    return text
-
-if uploaded_file is not None:
-    if uploaded_file.name.endswith(".pdf"):
-        file_type = "pdf"
-        extracted_text = get_pdf_text(uploaded_file)
-        st.toast("PDF Ready!", icon="📄")
-    else:
-        file_type = "image"
-        image = Image.open(uploaded_file)
-        st.toast("Image Ready!", icon="📸")
-
-# --- 7. API Setup ---
+# --- 6. API Setup ---
 try:
     GOOGLE_API_KEY = st.secrets["GOOGLE_API_KEY"]
     genai.configure(api_key=GOOGLE_API_KEY)
@@ -149,7 +139,7 @@ except:
     st.error("Error: Please check API Key.")
     st.stop()
 
-# --- 8. Chat Logic ---
+# --- 7. Chat Logic ---
 if "messages" not in st.session_state:
     st.session_state.messages = [
         {"role": "assistant", "content": "જયશ્રી કૃષ્ણ! 🙏 હું DEV છું. બોલો અથવા લખો!"}
@@ -162,31 +152,46 @@ for message in st.session_state.messages:
         if "audio" in message:
             st.audio(message["audio"], format="audio/mp3")
 
-# --- 9. Input Handling ---
+# --- 8. INPUT HANDLING (Main Logic) ---
+
 final_input = None
+
+# Logic: જો માઈકમાંથી અવાજ આવ્યો હોય તો તેને વાપરો, નહિતર ટાઈપિંગ જુઓ
 if voice_input:
     final_input = voice_input
 elif chat_input := st.chat_input("Ask DEV..."):
     final_input = chat_input
 
+# જો કોઈ પણ ઈનપુટ (અવાજ કે લખાણ) મળ્યું હોય તો જ આગળ વધો
 if final_input:
+    # યુઝરનો મેસેજ બતાવો
     with st.chat_message("user", avatar="👤"):
         st.markdown(final_input)
     st.session_state.messages.append({"role": "user", "content": final_input})
 
+    # AI જવાબ આપે છે
     try:
         with st.chat_message("assistant", avatar="🤖"):
-            with st.spinner("Thinking..."):
+            with st.spinner("વિચારી રહ્યો છું..."):
                 response_text = ""
-                # Logic for Image/PDF/Text
-                if uploaded_file is not None and file_type == "image":
+                
+                # Image Logic
+                if uploaded_file is not None and uploaded_file.name.endswith(('.jpg', '.png', '.jpeg')):
                     image = Image.open(uploaded_file)
                     response = model.generate_content([final_input, image])
                     response_text = response.text
-                elif uploaded_file is not None and file_type == "pdf":
-                    prompt = f"PDF: {extracted_text}\n\nQ: {final_input}"
+                
+                # PDF Logic
+                elif uploaded_file is not None and uploaded_file.name.endswith('.pdf'):
+                    pdf_reader = PyPDF2.PdfReader(uploaded_file)
+                    pdf_text = ""
+                    for page in pdf_reader.pages:
+                        pdf_text += page.extract_text()
+                    prompt = f"PDF Context:\n{pdf_text}\n\nQuestion: {final_input}"
                     response = model.generate_content(prompt)
                     response_text = response.text
+                
+                # Text Logic
                 else:
                     chat_history = []
                     for m in st.session_state.messages:
@@ -196,18 +201,27 @@ if final_input:
                     response = model.generate_content(chat_history)
                     response_text = response.text
 
+                # ટેક્સ્ટ બતાવો
                 st.markdown(response_text)
                 
-                # Voice Output
+                # Voice Output (બોલવાનું)
                 try:
                     tts = gTTS(text=response_text, lang='gu') 
                     audio_bytes = io.BytesIO()
                     tts.write_to_fp(audio_bytes)
                     audio_bytes.seek(0)
                     st.audio(audio_bytes, format="audio/mp3")
-                    st.session_state.messages.append({"role": "assistant", "content": response_text, "audio": audio_bytes})
+                    
+                    st.session_state.messages.append({
+                        "role": "assistant", 
+                        "content": response_text,
+                        "audio": audio_bytes
+                    })
                 except:
-                    st.session_state.messages.append({"role": "assistant", "content": response_text})
+                    st.session_state.messages.append({
+                        "role": "assistant", 
+                        "content": response_text
+                    })
 
     except Exception as e:
         st.error(f"Error: {e}")
