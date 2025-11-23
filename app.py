@@ -9,13 +9,18 @@ from streamlit_mic_recorder import speech_to_text
 # --- 1. Page Config ---
 st.set_page_config(page_title="DEV", page_icon="🤖", layout="centered")
 
-# --- 2. Theme Logic ---
+# --- 2. Initialize Session State (Memory) ---
 if "theme" not in st.session_state:
     st.session_state.theme = False
+if "messages" not in st.session_state:
+    st.session_state.messages = [{"role": "assistant", "content": "જયશ્રી કૃષ્ણ! 🙏 હું DEV છું."}]
+if "process_input" not in st.session_state:
+    st.session_state.process_input = None
 
 def toggle_theme():
     st.session_state.theme = not st.session_state.theme
 
+# --- 3. Colors & CSS ---
 if st.session_state.theme:
     main_bg = "#0E1117"
     text_color = "#FFFFFF"
@@ -27,45 +32,21 @@ else:
     title_color = "#00008B"
     popover_bg = "#F0F2F6"
 
-# --- 3. CSS Styling (Color Fix) ---
 st.markdown(f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap');
-
     .stApp {{ background-color: {main_bg} !important; color: {text_color} !important; }}
-    
-    /* બધા અક્ષરોનો કલર ફિક્સ */
-    p, div, span, li, label, h1, h2, h3, h4, h5, h6 {{
-        color: {text_color} !important;
-    }}
-    
-    /* Popover (સેટિંગ્સ મેનુ) કલર ફિક્સ */
-    [data-testid="stPopoverBody"] {{
-        background-color: {popover_bg} !important;
-        border: 1px solid {text_color};
-    }}
-    [data-testid="stPopoverBody"] p, [data-testid="stPopoverBody"] span {{
-        color: {text_color} !important;
-    }}
-
-    /* Title Font */
-    h1 {{
-        font-family: 'Orbitron', sans-serif !important;
-        color: {title_color} !important;
-        text-align: center;
-        font-size: 3rem !important;
-        margin-top: 10px;
-    }}
-
-    /* Hide Elements */
-    [data-testid="stSidebar"], [data-testid="stToolbar"], footer, header {{
-        display: none !important;
-    }}
+    p, div, span, li, label, h1, h2, h3, h4, h5, h6 {{ color: {text_color} !important; }}
+    [data-testid="stPopoverBody"] {{ background-color: {popover_bg} !important; border: 1px solid {text_color}; }}
+    [data-testid="stPopoverBody"] p, [data-testid="stPopoverBody"] span {{ color: {text_color} !important; }}
+    h1 {{ font-family: 'Orbitron', sans-serif !important; color: {title_color} !important; text-align: center; font-size: 3rem !important; margin-top: 10px; }}
+    [data-testid="stSidebar"], [data-testid="stToolbar"], footer, header {{ display: none !important; }}
+    .stButton button {{ width: 100%; border-radius: 10px; border: 1px solid {text_color}; }}
     .block-container {{ padding-top: 2rem !important; padding-bottom: 5rem !important; }}
     </style>
     """, unsafe_allow_html=True)
 
-# --- 4. Layout ---
+# --- 4. Header ---
 st.markdown(f"""
     <h1 style='display: flex; align-items: center; justify-content: center; gap: 15px;'>
         <img src="https://cdn-icons-png.flaticon.com/512/2040/2040946.png" width="50" height="50" style="vertical-align: middle;">
@@ -75,33 +56,30 @@ st.markdown(f"""
         Developed by <b>Devendra Ramanuj</b> | 📱 9276505035
     </div>
     """, unsafe_allow_html=True)
-
 st.write("---")
 
-# --- 5. VOICE INPUT & SETTINGS ---
+# --- 5. INPUT SECTION (Mic & Settings) ---
 col_mic, col_sets = st.columns([2, 1])
 
-# અવાજને મેમરીમાં લેવા માટેનું વેરિયેબલ
-voice_val = None
+# અવાજ સેવ કરવા માટેનું ફંક્શન (Callback)
+def voice_callback():
+    if st.session_state.my_mic_output:
+        st.session_state.process_input = st.session_state.my_mic_output
 
 with col_mic:
-    # માઈક બટન
-    text = speech_to_text(
+    # માઈક બટન (Callback સાથે)
+    speech_to_text(
         language='gu-IN',
-        start_prompt="🎤 બોલવા માટે દબાવો",
-        stop_prompt="⏹️ બંધ કરો (Processing...)",
-        just_once=True,
-        key='mic_main'
+        start_prompt="🎤 બોલો (Tap to Speak)",
+        stop_prompt="⏹️ મોકલો (Tap to Send)",
+        key='my_mic_output',
+        callback=voice_callback # અવાજ આવે એટલે તરત સેવ કરો
     )
-    if text:
-        voice_val = text # અવાજ આવ્યો
 
 with col_sets:
     with st.popover("⚙️ સેટિંગ્સ"):
-        st.write("###### 🎨 Theme")
         st.toggle("🌗 Mode", value=st.session_state.theme, on_change=toggle_theme)
-        st.write("###### 📂 Files")
-        uploaded_file = st.file_uploader("Upload", type=["jpg", "pdf"])
+        uploaded_file = st.file_uploader("File", type=["jpg", "pdf"])
         if st.button("🗑️ Reset Chat"):
             st.session_state.messages = []
             st.rerun()
@@ -115,13 +93,7 @@ except:
     st.error("Error: Please check API Key.")
     st.stop()
 
-# --- 7. Chat Logic ---
-if "messages" not in st.session_state:
-    st.session_state.messages = [
-        {"role": "assistant", "content": "જયશ્રી કૃષ્ણ! 🙏 હું DEV છું."}
-    ]
-
-# મેસેજ બતાવો
+# --- 7. Display Chat ---
 for message in st.session_state.messages:
     avatar = "🤖" if message["role"] == "assistant" else "👤"
     with st.chat_message(message["role"], avatar=avatar):
@@ -129,25 +101,22 @@ for message in st.session_state.messages:
         if "audio" in message:
             st.audio(message["audio"], format="audio/mp3")
 
-# --- 8. PROCESSING LOGIC (The Fix) ---
+# --- 8. PROCESSING LOGIC ---
 
-final_input = None
+# જો ટાઈપ કર્યું હોય તો
+if chat_val := st.chat_input("Ask DEV..."):
+    st.session_state.process_input = chat_val
 
-# જો અવાજ આવ્યો હોય, તો તેને priority આપો
-if voice_val:
-    final_input = voice_val
-# જો અવાજ ન હોય અને ટાઈપ કર્યું હોય
-elif chat_input := st.chat_input("Ask DEV..."):
-    final_input = chat_input
-
-# જો કઈ પણ ઇનપુટ મળ્યું હોય
-if final_input:
-    # User Message
+# હવે જો કોઈ પણ ઇનપુટ (માઈક અથવા ટાઈપ) મેમરીમાં હોય તો પ્રોસેસ કરો
+if st.session_state.process_input:
+    user_text = st.session_state.process_input
+    
+    # User Message Show
     with st.chat_message("user", avatar="👤"):
-        st.markdown(final_input)
-    st.session_state.messages.append({"role": "user", "content": final_input})
+        st.markdown(user_text)
+    st.session_state.messages.append({"role": "user", "content": user_text})
 
-    # AI Response
+    # AI Response Logic
     try:
         with st.chat_message("assistant", avatar="🤖"):
             with st.spinner("વિચારી રહ્યો છું..."):
@@ -156,7 +125,7 @@ if final_input:
                 # Image
                 if uploaded_file is not None and uploaded_file.name.endswith(('.jpg', '.png', '.jpeg')):
                     image = Image.open(uploaded_file)
-                    response = model.generate_content([final_input, image])
+                    response = model.generate_content([user_text, image])
                     response_text = response.text
                 # PDF
                 elif uploaded_file is not None and uploaded_file.name.endswith('.pdf'):
@@ -164,7 +133,7 @@ if final_input:
                     pdf_text = ""
                     for page in pdf_reader.pages:
                         pdf_text += page.extract_text()
-                    prompt = f"PDF Context:\n{pdf_text}\n\nQuestion: {final_input}"
+                    prompt = f"PDF Context:\n{pdf_text}\n\nQuestion: {user_text}"
                     response = model.generate_content(prompt)
                     response_text = response.text
                 # Text
@@ -189,6 +158,10 @@ if final_input:
                     st.session_state.messages.append({"role": "assistant", "content": response_text, "audio": audio_bytes})
                 except:
                     st.session_state.messages.append({"role": "assistant", "content": response_text})
-                    
+
     except Exception as e:
         st.error(f"Error: {e}")
+    
+    # પ્રોસેસ પતી જાય એટલે મેમરી ખાલી કરો (જેથી ફરી વાર એ જ મેસેજ ન જાય)
+    st.session_state.process_input = None
+    st.rerun()
