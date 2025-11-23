@@ -8,7 +8,7 @@ st.set_page_config(
     layout="centered"
 )
 
-# --- 2. Custom CSS (બધું છુપાવવા માટે) ---
+# --- 2. Strong CSS (બધું છુપાવવા માટેનો ખાસ કોડ) ---
 st.markdown("""
     <style>
     /* 1. આખા પેજનું બેકગ્રાઉન્ડ */
@@ -16,28 +16,32 @@ st.markdown("""
         background-color: #f0f2f6;
     }
     
-    /* 2. ઉપરનું મેનુ (Hamburger Menu) અને GitHub આઈકન છુપાવો */
-    #MainMenu {visibility: hidden;}
+    /* 2. ઉપરનું ટૂલબાર (જ્યાં GitHub અને મેનુ આવે છે) તેને જડમૂળથી છુપાવો */
+    [data-testid="stToolbar"] {
+        visibility: hidden !important;
+        display: none !important;
+    }
     
-    /* 3. નીચેનું Footer (Made with Streamlit) છુપાવો */
-    footer {visibility: hidden;}
+    /* 3. ઉપરનું Header Decoration (રંગબેરંગી પટ્ટી) */
+    header {
+        visibility: hidden !important;
+    }
     
-    /* 4. ઉપરની રંગબેરંગી પટ્ટી (Header) છુપાવો */
-    /* નોંધ: આનાથી ક્યારેક મોબાઈલમાં સાઈડબારનું બટન પણ જતું રહે છે. 
-       જો મોબાઈલમાં મેનુ ન ખૂલે, તો આ 'header' વાળી લાઈન કાઢી નાખવી. */
-    /* header {visibility: hidden;} */ 
+    /* 4. નીચેનું Footer (Made with Streamlit) */
+    footer {
+        visibility: hidden !important;
+        display: none !important;
+    }
     
-    /* 5. ખાસ 'Deploy' અને 'Manage App' બટન છુપાવો */
-    .stDeployButton {display:none;}
-    
-    /* 6. ટાઈટલ સેન્ટરમાં */
+    /* 5. ટાઈટલ સેન્ટરમાં અને સુંદર */
     h1 {
         color: #1f618d;
         text-align: center;
         font-family: sans-serif;
+        margin-top: -50px; /* ઉપર જગ્યા ખાલી ન રહે એટલે થોડું ઉપર ખેંચ્યું */
     }
     
-    /* મોબાઈલ માટે પેડિંગ */
+    /* 6. મોબાઈલમાં મેનુ બટન માટે જગ્યા (જો સાઈડબાર વાપરવી હોય તો) */
     .st-emotion-cache-16txtl3 {
         padding-top: 1rem; 
     }
@@ -51,7 +55,6 @@ with st.sidebar:
         st.session_state.messages = []
         st.rerun()
     st.divider()
-    # Developer Credit
     st.markdown("""
     <div style='text-align: center; color: grey;'>
         <b>Developed by:</b><br>
@@ -92,7 +95,6 @@ if user_input := st.chat_input("Message Dev Bot..."):
     st.session_state.messages.append({"role": "user", "content": user_input})
 
     try:
-        # History
         chat_history = []
         for m in st.session_state.messages:
             if m["role"] != "system":
