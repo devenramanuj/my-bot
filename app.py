@@ -1,7 +1,5 @@
 import streamlit as st
 import google.generativeai as genai
-from PIL import Image
-import PyPDF2
 from gtts import gTTS
 import io
 
@@ -35,8 +33,7 @@ st.markdown(f"""
     p, div, span, li, label, h1, h2, h3, h4, h5, h6 {{ color: {text_color} !important; }}
     
     [data-testid="stPopoverBody"] {{ background-color: {popover_bg} !important; border: 1px solid {text_color}; }}
-    [data-testid="stPopoverBody"] p, [data-testid="stPopoverBody"] span {{ color: {text_color} !important; }}
-
+    
     h1 {{
         font-family: 'Orbitron', sans-serif !important;
         color: {title_color} !important;
@@ -44,10 +41,18 @@ st.markdown(f"""
         font-size: 3rem !important;
         margin-top: 10px;
     }}
+    
+    /* ઓડિયો ઈનપુટ ફિક્સ */
+    .stAudioInput {{
+        position: fixed;
+        bottom: 80px;
+        z-index: 9999;
+        width: 100%;
+    }}
 
     /* બધું છુપાવો */
     [data-testid="stSidebar"], [data-testid="stToolbar"], footer, header {{ display: none !important; }}
-    .block-container {{ padding-top: 2rem !important; padding-bottom: 5rem !important; }}
+    .block-container {{ padding-top: 2rem !important; padding-bottom: 8rem !important; }}
     </style>
     """, unsafe_allow_html=True)
 
@@ -62,26 +67,16 @@ st.markdown(f"""
     </div>
     """, unsafe_allow_html=True)
 
-st.write("---")
-
-# --- 5. Settings Menu (Only) ---
-# માઈક બટન કાઢી નાખ્યું છે, હવે માત્ર સેટિંગ્સ રહેશે
+# Settings Menu (Only)
 col1, col2, col3 = st.columns([1, 2, 1])
 with col2:
     with st.popover("⚙️ સેટિંગ્સ (Settings)", use_container_width=True):
-        st.write("###### 🎨 Theme")
         st.toggle("🌗 Mode", value=st.session_state.theme, on_change=toggle_theme)
-        
-        st.divider()
-        st.write("###### 📂 Files")
-        uploaded_file = st.file_uploader("Upload", type=["jpg", "pdf"])
-        
-        st.divider()
         if st.button("🗑️ Reset Chat"):
             st.session_state.messages = []
             st.rerun()
 
-# --- 6. API Setup ---
+# --- 5. API Setup ---
 try:
     GOOGLE_API_KEY = st.secrets["GOOGLE_API_KEY"]
     genai.configure(api_key=GOOGLE_API_KEY)
@@ -90,67 +85,89 @@ except:
     st.error("Error: Please check API Key.")
     st.stop()
 
-# --- 7. Chat Logic ---
+# --- 6. Chat Logic ---
 if "messages" not in st.session_state:
     st.session_state.messages = [
-        {"role": "assistant", "content": "જયશ્રી કૃષ્ણ! 🙏 હું DEV છું. બોલો અથવા લખો!"}
+        {"role": "assistant", "content": "જયશ્રી કૃષ્ણ! 🙏 હું DEV છું. નીચે માઈક બટન દબાવીને સીધું બોલો!"}
     ]
 
 for message in st.session_state.messages:
     avatar = "🤖" if message["role"] == "assistant" else "👤"
     with st.chat_message(message["role"], avatar=avatar):
-        st.markdown(message["content"])
-        if "audio" in message:
-            st.audio(message["audio"], format="audio/mp3")
+        # જો યુઝરનો ઓડિયો હોય તો પ્લેયર બતાવો
+        if "user_audio" in message:
+            st.audio(message["user_audio"], format="audio/wav")
+        elif message["content"]:
+            st.markdown(message["content"])
+            
+        # AI નો ઓડિયો
+        if "ai_audio" in message:
+            st.audio(message["ai_audio"], format="audio/mp3")
 
-# --- 8. Input Processing ---
-if user_input := st.chat_input("Ask DEV... (Use Keyboard Mic 🎙️)"):
-    
+# --- 7. NEW NATIVE AUDIO INPUT (The Fix) ---
+# આ નવું ફીચર છે જે 100% ચાલે છે
+audio_value = st.audio_input("Record a voice note")
+
+# --- 8. Processing Logic ---
+final_input = None
+is_audio_msg = False
+
+# કેસ 1: ઓડિયો રેકોર્ડ કર્યો
+if audio_value:
+    final_input = audio_value
+    is_audio_msg = True
+
+# કેસ 2: ટાઈપ કર્યું
+elif chat_input := st.chat_input("Type a message..."):
+    final_input = chat_input
+    is_audio_msg = False
+
+if final_input:
+    # User Message Show
     with st.chat_message("user", avatar="👤"):
-        st.markdown(user_input)
-    st.session_state.messages.append({"role": "user", "content": user_input})
+        if is_audio_msg:
+            st.audio(final_input, format="audio/wav")
+            # મેમરીમાં ઓડિયો સેવ કરો
+            st.session_state.messages.append({"role": "user", "content": "", "user_audio": final_input})
+        else:
+            st.markdown(final_input)
+            st.session_state.messages.append({"role": "user", "content": final_input})
 
+    # AI Response
     try:
         with st.chat_message("assistant", avatar="🤖"):
-            with st.spinner("વિચારી રહ્યો છું..."):
-                response_text = ""
+            with st.spinner("સાંભળી રહ્યો છું..."):
                 
-                # Image Logic
-                if uploaded_file is not None and uploaded_file.name.endswith(('.jpg', '.png', '.jpeg')):
-                    image = Image.open(uploaded_file)
-                    response = model.generate_content([user_input, image])
-                    response_text = response.text
-                # PDF Logic
-                elif uploaded_file is not None and uploaded_file.name.endswith('.pdf'):
-                    pdf_reader = PyPDF2.PdfReader(uploaded_file)
-                    pdf_text = ""
-                    for page in pdf_reader.pages:
-                        pdf_text += page.extract_text()
-                    prompt = f"PDF Context:\n{pdf_text}\n\nQuestion: {user_input}"
-                    response = model.generate_content(prompt)
-                    response_text = response.text
-                # Text Logic
+                # ઓડિયો સીધો જ મોડેલને મોકલો (Gemini સાંભળી શકે છે!)
+                if is_audio_msg:
+                    # ઓડિયો બાઈટ્સ વાંચો
+                    audio_bytes = final_input.getvalue()
+                    prompt_parts = [
+                        "Listen to this audio and reply in Gujarati only. Be helpful and kind.",
+                        {"mime_type": "audio/wav", "data": audio_bytes}
+                    ]
+                    response = model.generate_content(prompt_parts)
                 else:
-                    chat_history = []
-                    for m in st.session_state.messages:
-                        if m["role"] != "system" and "audio" not in m:
-                            role = "model" if m["role"] == "assistant" else "user"
-                            chat_history.append({"role": role, "parts": [m["content"]]})
-                    response = model.generate_content(chat_history)
-                    response_text = response.text
-
+                    response = model.generate_content(final_input)
+                
+                response_text = response.text
                 st.markdown(response_text)
                 
-                # Voice Output (બોટ તો બોલશે જ!)
+                # Voice Output (AI બોલે છે)
                 try:
                     tts = gTTS(text=response_text, lang='gu') 
-                    audio_bytes = io.BytesIO()
-                    tts.write_to_fp(audio_bytes)
-                    audio_bytes.seek(0)
-                    st.audio(audio_bytes, format="audio/mp3")
-                    st.session_state.messages.append({"role": "assistant", "content": response_text, "audio": audio_bytes})
+                    ai_audio_bytes = io.BytesIO()
+                    tts.write_to_fp(ai_audio_bytes)
+                    ai_audio_bytes.seek(0)
+                    st.audio(ai_audio_bytes, format="audio/mp3")
+                    
+                    st.session_state.messages.append({
+                        "role": "assistant", 
+                        "content": response_text, 
+                        "ai_audio": ai_audio_bytes
+                    })
                 except:
                     st.session_state.messages.append({"role": "assistant", "content": response_text})
-
+                    
     except Exception as e:
         st.error(f"Error: {e}")
