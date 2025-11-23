@@ -8,7 +8,7 @@ st.set_page_config(
     layout="centered"
 )
 
-# --- 2. CSS Styles (Normal Look + Click Fix) ---
+# --- 2. CSS Styles (Clean Look) ---
 st.markdown("""
     <style>
     /* 1. બેકગ્રાઉન્ડ */
@@ -16,57 +16,62 @@ st.markdown("""
         background-color: #f0f2f6;
     }
 
-    /* 2. લોગો/મેનુ છુપાવો */
+    /* 2. લોગો/મેનુ/હેડર છુપાવો */
     [data-testid="stToolbar"], 
     [data-testid="stDecoration"], 
-    footer {
+    footer, 
+    header {
         visibility: hidden !important;
         display: none !important;
     }
 
-    /* 3. ટાઈટલ */
+    /* 3. મોબાઈલ મેનુ બટન (Hamburger) દેખાવું જોઈએ */
+    [data-testid="stSidebarCollapsedControl"] {
+        display: block !important;
+        visibility: visible !important;
+        top: 15px !important;
+        z-index: 99999 !important;
+    }
+
+    /* 4. ટાઈટલ */
     h1 {
         color: #1f618d;
         text-align: center;
         font-family: sans-serif;
+        margin-top: -30px;
     }
 
-    /* 4. ચેટ ઇનપુટ (સૌથી મહત્વનું) */
-    .stChatInput {
-        /* આ નોર્મલ જગ્યાએ જ રહેશે, હવામાં નહીં લટકે */
-        padding-bottom: 15px !important;
-        
-        /* પણ આ સૌથી ઉપર રહેશે (Top Layer) */
-        z-index: 99999 !important; 
-    }
-
-    /* 5. Send બટનને ખાસ પાવર આપો */
-    button[data-testid="stChatInputSubmitButton"] {
-        z-index: 100000 !important; /* લોગો કરતા પણ ઉપર */
-    }
-
-    /* 6. મોબાઈલ મેનુ બટન */
-    [data-testid="stSidebarCollapsedControl"] {
-        display: block !important;
-        z-index: 99999 !important;
-        top: 15px !important;
+    /* 5. ડેવલપર ક્રેડિટનું સેટિંગ */
+    .dev-footer {
+        text-align: center;
+        color: grey;
+        font-size: 13px;
+        margin-top: 20px;
+        padding: 10px;
+        border-top: 1px solid #ddd;
     }
     </style>
     """, unsafe_allow_html=True)
 
-# --- 3. Sidebar (મેનુ) ---
+# --- 3. Sidebar (મેનુ અને ક્રેડિટ) ---
 with st.sidebar:
-    st.title("Settings")
+    st.title("⚙️ Settings")
+    
+    # વાતચીત ડિલીટ બટન
     if st.button("🗑️ Clear Chat", use_container_width=True):
         st.session_state.messages = []
         st.rerun()
-    st.divider()
-    # Developer Credit
+    
+    # થોડી જગ્યા છોડો
+    st.write("")
+    st.write("")
+    
+    # --- Developer Credit (ફુટર) ---
     st.markdown("""
-    <div style='text-align: center; color: grey;'>
+    <div class="dev-footer">
         <b>Developed by:</b><br>
         Devendra Ramanuj<br>
-        📱 9276505035
+        📞 9276505035
     </div>
     """, unsafe_allow_html=True)
 
@@ -86,7 +91,7 @@ except:
 # --- 6. Chat Logic ---
 if "messages" not in st.session_state:
     st.session_state.messages = [
-        {"role": "assistant", "content": "Hello! I am Dev Bot. (હું વાત કરવા માટે તૈયાર છું.)"}
+        {"role": "assistant", "content": "Hello! I am Dev Bot. (હું ગુજરાતી સમજું છું. બોલો, શું મદદ કરું?)"}
     ]
 
 # મેસેજ બતાવો
