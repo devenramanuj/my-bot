@@ -8,42 +8,55 @@ st.set_page_config(
     layout="centered"
 )
 
-# --- 2. Strong CSS (બધું છુપાવવા માટેનો ખાસ કોડ) ---
+# --- 2. Ultra-Strong CSS (લોગો હટાવવા માટે) ---
 st.markdown("""
     <style>
     /* 1. આખા પેજનું બેકગ્રાઉન્ડ */
     .stApp {
         background-color: #f0f2f6;
     }
-    
-    /* 2. ઉપરનું ટૂલબાર (જ્યાં GitHub અને મેનુ આવે છે) તેને જડમૂળથી છુપાવો */
+
+    /* 2. જમણી બાજુનું મેનુ (3 ટપકાં) અને GitHub આઈકન */
     [data-testid="stToolbar"] {
         visibility: hidden !important;
         display: none !important;
     }
-    
-    /* 3. ઉપરનું Header Decoration (રંગબેરંગી પટ્ટી) */
+
+    /* 3. ઉપરની રંગબેરંગી પટ્ટી (Decoration) */
+    [data-testid="stDecoration"] {
+        visibility: hidden !important;
+        display: none !important;
+    }
+
+    /* 4. જો કોઈ હેડર રહી ગયું હોય તો */
     header {
         visibility: hidden !important;
     }
-    
-    /* 4. નીચેનું Footer (Made with Streamlit) */
+
+    /* 5. નીચેનું Footer */
     footer {
         visibility: hidden !important;
         display: none !important;
     }
+
+    /* 6. કન્ટેન્ટને ઉપર ખેંચવા માટે (કારણ કે હેડર જતું રહ્યું છે) */
+    .block-container {
+        padding-top: 2rem !important;
+    }
     
-    /* 5. ટાઈટલ સેન્ટરમાં અને સુંદર */
+    /* 7. મોબાઈલ મેનુ બટન (Sidebar Toggle) દેખાવું જોઈએ */
+    /* હેડર છુપાવવાથી મોબાઈલ મેનુ પણ જતું રહે છે, તેને પાછું લાવવા: */
+    [data-testid="stSidebarCollapsedControl"] {
+        visibility: visible !important;
+        display: block !important;
+        top: 20px !important; /* થોડું નીચે લાવવા */
+    }
+
+    /* 8. ટાઈટલ ફોન્ટ */
     h1 {
         color: #1f618d;
         text-align: center;
         font-family: sans-serif;
-        margin-top: -50px; /* ઉપર જગ્યા ખાલી ન રહે એટલે થોડું ઉપર ખેંચ્યું */
-    }
-    
-    /* 6. મોબાઈલમાં મેનુ બટન માટે જગ્યા (જો સાઈડબાર વાપરવી હોય તો) */
-    .st-emotion-cache-16txtl3 {
-        padding-top: 1rem; 
     }
     </style>
     """, unsafe_allow_html=True)
