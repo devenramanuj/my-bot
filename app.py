@@ -3,65 +3,64 @@ import google.generativeai as genai
 
 # --- 1. Page Config ---
 st.set_page_config(
-    page_title="Dev Bot",
+    page_title="DEV",
     page_icon="🤖",
     layout="centered"
 )
 
 # --- 2. Theme Logic ---
 if "theme" not in st.session_state:
-    st.session_state.theme = False # Default is Light Mode
+    st.session_state.theme = False # Default Light
 
 def toggle_theme():
     st.session_state.theme = not st.session_state.theme
 
-# --- 3. Color Settings (અહીં સુધારો કર્યો છે) ---
+# --- 3. Color Settings ---
 if st.session_state.theme:
-    # 🌙 Night Mode (Dark)
+    # 🌙 Night Mode
     main_bg = "#0E1117"
-    text_color = "#FFFFFF"   # સફેદ અક્ષર
-    title_color = "#00C6FF"  # નિયોન બ્લુ
-    input_bg = "#262730"
+    text_color = "#FFFFFF"
+    title_color = "#00C6FF"  # Neon Blue
 else:
-    # ☀️ Day Mode (Light)
-    main_bg = "#FFFFFF"      # સફેદ બેકગ્રાઉન્ડ
-    text_color = "#000000"   # કાળા અક્ષર (Black)
-    title_color = "#00008B"  # ઘાટો વાદળી
-    input_bg = "#F0F2F6"
+    # ☀️ Day Mode
+    main_bg = "#FFFFFF"
+    text_color = "#000000"
+    title_color = "#00008B"  # Dark Blue
 
 # --- 4. CSS Styling ---
 st.markdown(f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap');
 
-    /* 1. બેકગ્રાઉન્ડ અને ટેક્સ્ટ કલર */
+    /* Background & Text */
     .stApp {{
         background-color: {main_bg} !important;
         color: {text_color} !important;
     }}
 
-    /* 2. બધા લખાણને કલર આપો (p, div, span, caption) */
+    /* All Text Elements */
     p, div, span, li, .stMarkdown, .stCaption {{
         color: {text_color} !important;
     }}
     
-    /* 3. ટાઈટલ */
+    /* Title Font (Orbitron) */
     h1 {{
         font-family: 'Orbitron', sans-serif !important;
         color: {title_color} !important;
         text-align: center;
-        font-size: 2.8rem !important;
+        font-size: 3rem !important; /* અક્ષરો મોટા કર્યા */
+        letter-spacing: 3px;
         margin-top: -10px;
     }}
 
-    /* 4. મોબાઈલ મેનુ બટનનો કલર */
+    /* Mobile Menu Button Color */
     [data-testid="stSidebarCollapsedControl"] {{
         color: {text_color} !important;
         display: block !important;
         z-index: 99999 !important;
     }}
     
-    /* 5. હેડર, ફૂટર છુપાવો */
+    /* Hide Streamlit Branding */
     [data-testid="stToolbar"], 
     [data-testid="stDecoration"], 
     footer, 
@@ -79,15 +78,15 @@ st.markdown(f"""
 
 # --- 5. Layout Elements ---
 
-# Title
+# Title (DEV) with AI Logo
 st.markdown(f"""
-    <h1 style='display: flex; align-items: center; justify-content: center; gap: 10px;'>
-        <img src="https://cdn-icons-png.flaticon.com/512/2040/2040946.png" width="45" height="45" style="vertical-align: middle;">
-        DEV BOT
+    <h1 style='display: flex; align-items: center; justify-content: center; gap: 15px;'>
+        <img src="https://cdn-icons-png.flaticon.com/512/2040/2040946.png" width="50" height="50" style="vertical-align: middle;">
+        DEV
     </h1>
     """, unsafe_allow_html=True)
 
-# Developer Info (કલર વેરિયેબલ સાથે)
+# Developer Info
 st.markdown(f"""
     <div style='text-align: center; color: {text_color}; font-size: 13px; margin-bottom: 5px; opacity: 0.9;'>
         Developed by <b>Devendra Ramanuj</b> | 📱 9276505035
@@ -118,7 +117,7 @@ except:
 # --- 8. Chat Logic ---
 if "messages" not in st.session_state:
     st.session_state.messages = [
-        {"role": "assistant", "content": "જયશ્રી કૃષ્ણ! 🙏 હું દેવ બોટ છું. બોલો, આજે હું તમારી શું સેવા કરું?"}
+        {"role": "assistant", "content": "જયશ્રી કૃષ્ણ! 🙏 હું DEV છું. બોલો, આજે હું તમારી શું સેવા કરું?"}
     ]
 
 for message in st.session_state.messages:
@@ -127,7 +126,7 @@ for message in st.session_state.messages:
         st.markdown(message["content"])
 
 # --- 9. Input ---
-if user_input := st.chat_input("Ask Dev Bot..."):
+if user_input := st.chat_input("Ask DEV..."):
     with st.chat_message("user", avatar="👤"):
         st.markdown(user_input)
     st.session_state.messages.append({"role": "user", "content": user_input})
