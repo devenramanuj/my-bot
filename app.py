@@ -8,7 +8,7 @@ st.set_page_config(
     layout="centered"
 )
 
-# --- 2. CSS Magic (Input Box ને ઉપર લેવા માટે) ---
+# --- 2. CSS Styles (Normal Look + Click Fix) ---
 st.markdown("""
     <style>
     /* 1. બેકગ્રાઉન્ડ */
@@ -16,7 +16,7 @@ st.markdown("""
         background-color: #f0f2f6;
     }
 
-    /* 2. ફૂટર અને હેડર ગાયબ */
+    /* 2. લોગો/મેનુ છુપાવો */
     [data-testid="stToolbar"], 
     [data-testid="stDecoration"], 
     footer {
@@ -24,36 +24,44 @@ st.markdown("""
         display: none !important;
     }
 
-    /* 3. ચેટ બોક્સનું સેટિંગ (આ મહત્વનું છે) */
-    .stChatInput {
-        position: fixed;
-        bottom: 50px !important; /* બોક્સને 50px ઉપર ખેંચ્યું */
-        z-index: 10000 !important; /* સૌથી ઉપર દેખાય */
-        background-color: #f0f2f6; /* પાછળનું ઢાંકવા માટે */
-        padding-bottom: 20px;
-    }
-    
-    /* 4. ચેટ બોક્સની નીચે ખાલી જગ્યા મુકો (Safety Margin) */
-    .stMain {
-        padding-bottom: 100px; 
-    }
-
-    /* 5. ટાઈટલ */
+    /* 3. ટાઈટલ */
     h1 {
         color: #1f618d;
         text-align: center;
         font-family: sans-serif;
     }
+
+    /* 4. ચેટ ઇનપુટ (સૌથી મહત્વનું) */
+    .stChatInput {
+        /* આ નોર્મલ જગ્યાએ જ રહેશે, હવામાં નહીં લટકે */
+        padding-bottom: 15px !important;
+        
+        /* પણ આ સૌથી ઉપર રહેશે (Top Layer) */
+        z-index: 99999 !important; 
+    }
+
+    /* 5. Send બટનને ખાસ પાવર આપો */
+    button[data-testid="stChatInputSubmitButton"] {
+        z-index: 100000 !important; /* લોગો કરતા પણ ઉપર */
+    }
+
+    /* 6. મોબાઈલ મેનુ બટન */
+    [data-testid="stSidebarCollapsedControl"] {
+        display: block !important;
+        z-index: 99999 !important;
+        top: 15px !important;
+    }
     </style>
     """, unsafe_allow_html=True)
 
-# --- 3. Sidebar ---
+# --- 3. Sidebar (મેનુ) ---
 with st.sidebar:
     st.title("Settings")
     if st.button("🗑️ Clear Chat", use_container_width=True):
         st.session_state.messages = []
         st.rerun()
     st.divider()
+    # Developer Credit
     st.markdown("""
     <div style='text-align: center; color: grey;'>
         <b>Developed by:</b><br>
@@ -66,6 +74,7 @@ with st.sidebar:
 st.title("Dev Bot")
 st.caption("Emotional AI Companion (Gujarati / English)")
 
+# --- 5. API Setup ---
 try:
     GOOGLE_API_KEY = st.secrets["GOOGLE_API_KEY"]
     genai.configure(api_key=GOOGLE_API_KEY)
@@ -74,18 +83,19 @@ except:
     st.error("Error: Please check API Key.")
     st.stop()
 
-# --- 5. Chat ---
+# --- 6. Chat Logic ---
 if "messages" not in st.session_state:
     st.session_state.messages = [
-        {"role": "assistant", "content": "Hello! I am Dev Bot. (ગુજરાતીમાં વાત કરવા માટે તૈયાર છું.)"}
+        {"role": "assistant", "content": "Hello! I am Dev Bot. (હું વાત કરવા માટે તૈયાર છું.)"}
     ]
 
+# મેસેજ બતાવો
 for message in st.session_state.messages:
     avatar = "🤖" if message["role"] == "assistant" else "👤"
     with st.chat_message(message["role"], avatar=avatar):
         st.markdown(message["content"])
 
-# --- 6. Input & Response ---
+# --- 7. Input & Response ---
 if user_input := st.chat_input("Message Dev Bot..."):
     with st.chat_message("user", avatar="👤"):
         st.markdown(user_input)
