@@ -26,45 +26,20 @@ else:
     text_color = "#000000"
     title_color = "#00008B"
 
-# --- 3. CSS Styling (Strong Color Fix) ---
+# --- 3. CSS Styling ---
 st.markdown(f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap');
 
-    /* Main App Background */
     .stApp {{
         background-color: {main_bg} !important;
         color: {text_color} !important;
     }}
     
-    /* General Text Color */
-    p, div, span, li, label, h1, h2, h3, h4, h5, h6 {{
+    /* બધા ટેક્સ્ટ કલર */
+    p, div, span, li, label, h1, h2, h3, h4, h5, h6, .stMarkdown {{
         color: {text_color} !important;
     }}
-
-    /* ----------------------------------------------------------- */
-    /* 🛑 SETTINGS MENU FIX (100% Readable)                      */
-    /* ----------------------------------------------------------- */
-    
-    /* મેનુ બોક્સ હંમેશા સફેદ રહેશે */
-    div[data-testid="stPopoverBody"] {{
-        background-color: #FFFFFF !important;
-        border: 2px solid #000000 !important;
-    }}
-
-    /* મેનુની અંદરના તમામ અક્ષરો હંમેશા કાળા રહેશે */
-    div[data-testid="stPopoverBody"] * {{
-        color: #000000 !important; 
-        font-weight: 500 !important;
-    }}
-    
-    /* મેનુની અંદરના બટન અને અપલોડર */
-    div[data-testid="stPopoverBody"] button {{
-        border: 1px solid #000000 !important;
-        color: #000000 !important;
-    }}
-
-    /* ----------------------------------------------------------- */
 
     /* Title Font */
     h1 {{
@@ -73,6 +48,21 @@ st.markdown(f"""
         text-align: center;
         font-size: 3rem !important;
         margin-top: 10px;
+    }}
+    
+    /* Expander (Menu) Styling - Border Color Fix */
+    .streamlit-expanderHeader {{
+        color: {text_color} !important;
+        background-color: transparent !important;
+        border: 1px solid {text_color};
+        border-radius: 10px;
+    }}
+    
+    .streamlit-expanderContent {{
+        background-color: transparent !important;
+        border: 1px solid {text_color};
+        border-top: none;
+        border-radius: 0 0 10px 10px;
     }}
 
     /* Hide Extra Elements */
@@ -96,22 +86,23 @@ st.markdown(f"""
 
 st.write("---")
 
-# --- 5. Settings Menu ---
-col1, col2, col3 = st.columns([1, 2, 1])
-with col2:
-    # સેટિંગ્સ બટન
-    with st.popover("⚙️ સેટિંગ્સ (Settings)", use_container_width=True):
-        st.write("###### 🎨 Theme")
-        st.toggle("🌗 Mode", value=st.session_state.theme, on_change=toggle_theme)
-        
-        st.divider()
-        st.write("###### 📂 Files")
-        uploaded_file = st.file_uploader("Upload", type=["jpg", "pdf"])
-        
-        st.divider()
-        if st.button("🗑️ Reset Chat"):
-            st.session_state.messages = []
-            st.rerun()
+# --- 5. NEW MENU (Expander) ---
+# Popover કાઢી નાખ્યું, હવે Expander છે જે કલર બગાડશે નહીં.
+with st.expander("⚙️ સેટિંગ્સ અને ફાઈલ અપલોડ (Settings)"):
+    
+    st.write("###### 🎨 Theme Change")
+    st.toggle("🌗 Day / Night Mode", value=st.session_state.theme, on_change=toggle_theme)
+    
+    st.divider()
+    
+    st.write("###### 📂 Files (Image/PDF)")
+    uploaded_file = st.file_uploader("Upload", type=["jpg", "pdf"])
+    
+    st.divider()
+    
+    if st.button("🗑️ Reset Chat"):
+        st.session_state.messages = []
+        st.rerun()
 
 # --- 6. API Setup ---
 try:
