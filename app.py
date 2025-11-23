@@ -8,38 +8,26 @@ st.set_page_config(
     layout="centered"
 )
 
-# --- 2. Sidebar Settings ---
-with st.sidebar:
-    st.title("⚙️ Settings")
-    
-    # Day / Night Switch
-    theme_mode = st.toggle("🌗 Day / Night Mode", value=False)
-    
-    # Clear Chat Button
-    if st.button("🗑️ Clear Chat", use_container_width=True):
-        st.session_state.messages = []
-        st.rerun()
-        
-    st.divider()
-    
-    # Developer Credit
-    st.markdown("""
-    <div style='text-align: center; color: grey;'>
-        <small>Developed by</small><br>
-        <b>Devendra Ramanuj</b><br>
-        📱 9276505035
-    </div>
-    """, unsafe_allow_html=True)
+# --- 2. Dynamic CSS (Theme Logic) ---
+# આ સ્વિચ હવે અહીં જ બનાવી દીધી (મેનુની બહાર)
+# જો મેનુમાં રાખવી હોય તો st.sidebar લખવું પડે, આપણે બહાર રાખી છે.
+if "theme" not in st.session_state:
+    st.session_state.theme = False
 
-# --- 3. Dynamic CSS (AI Look) ---
-if theme_mode:
-    main_bg = "#0E1117"      # Dark
-    text_color = "#E0E0E0"   # Light Text
-    title_color = "#00C6FF"  # Neon Blue
+def toggle_theme():
+    st.session_state.theme = not st.session_state.theme
+
+# --- 3. CSS Styling ---
+if st.session_state.theme:
+    # Dark Mode
+    main_bg = "#0E1117"
+    text_color = "#E0E0E0"
+    title_color = "#00C6FF" # Neon Blue
 else:
-    main_bg = "#FFFFFF"      # White
-    text_color = "#000000"   # Black Text
-    title_color = "#00008B"  # Dark Blue
+    # Light Mode
+    main_bg = "#FFFFFF"
+    text_color = "#000000"
+    title_color = "#00008B" # Dark Blue
 
 st.markdown(f"""
     <style>
@@ -54,15 +42,20 @@ st.markdown(f"""
         font-family: 'Orbitron', sans-serif !important;
         color: {title_color} !important;
         text-align: center;
-        font-size: 3rem !important;
-        letter-spacing: 2px;
-        margin-top: -20px;
+        font-size: 2.8rem !important;
+        margin-top: -10px;
     }}
 
-    .stCaption, p, li {{
-        color: {text_color} !important;
+    /* ટાઈટલની નીચે ડેવલપર નામ */
+    .dev-text {{
+        text-align: center;
+        color: {text_color};
+        font-size: 13px;
+        opacity: 0.8;
+        margin-bottom: 10px;
     }}
-    
+
+    /* બધું છુપાવો */
     [data-testid="stToolbar"], 
     [data-testid="stDecoration"], 
     footer, 
@@ -71,6 +64,7 @@ st.markdown(f"""
         display: none !important;
     }}
 
+    /* મોબાઈલ મેનુ બટન */
     [data-testid="stSidebarCollapsedControl"] {{
         display: block !important;
         visibility: visible !important;
@@ -86,22 +80,37 @@ st.markdown(f"""
     </style>
     """, unsafe_allow_html=True)
 
-# --- 4. Developer Info (Top Header) ---
-st.markdown(f"""
-    <div style='text-align: center; color: {text_color}; font-size: 13px; margin-bottom: 5px; opacity: 0.8;'>
-        Developed by <b>Devendra Ramanuj</b> | 📱 9276505035
-    </div>
-    """, unsafe_allow_html=True)
+# --- 4. Main Layout ---
 
-# --- 5. Main Title ---
+# (A) Title (AI Logo with Name)
 st.markdown(f"""
-    <h1 style='display: flex; align-items: center; justify-content: center; gap: 15px;'>
-        <img src="https://cdn-icons-png.flaticon.com/512/2040/2040946.png" width="50" height="50" style="vertical-align: middle;">
+    <h1 style='display: flex; align-items: center; justify-content: center; gap: 10px;'>
+        <img src="https://cdn-icons-png.flaticon.com/512/2040/2040946.png" width="45" height="45" style="vertical-align: middle;">
         DEV BOT
     </h1>
     """, unsafe_allow_html=True)
 
-st.caption("Advanced AI Agent (Gujarati / English)")
+# (B) Developer Info
+st.markdown(f"""
+    <div class="dev-text">
+        Developed by <b>Devendra Ramanuj</b> | 📱 9276505035
+    </div>
+    """, unsafe_allow_html=True)
+
+# (C) The Switch (હવે અહીં સામે જ દેખાશે)
+col1, col2, col3 = st.columns([1, 2, 1])
+with col2:
+    # વચમાં સ્વિચ મૂકી
+    mode = st.toggle("🌗 Day / Night Mode", value=st.session_state.theme, on_change=toggle_theme)
+
+st.write("") # થોડી જગ્યા
+
+# --- 5. Sidebar (Only Clear Chat) ---
+with st.sidebar:
+    st.title("Settings")
+    if st.button("🗑️ Clear Chat", use_container_width=True):
+        st.session_state.messages = []
+        st.rerun()
 
 # --- 6. API Setup ---
 try:
@@ -112,10 +121,9 @@ except:
     st.error("Error: Please check API Key.")
     st.stop()
 
-# --- 7. Chat Logic (જયશ્રી કૃષ્ણ વાળો ફેરફાર) ---
+# --- 7. Chat Logic ---
 if "messages" not in st.session_state:
     st.session_state.messages = [
-        # અહીં મેસેજ બદલ્યો છે
         {"role": "assistant", "content": "જયશ્રી કૃષ્ણ! 🙏 હું દેવ બોટ છું. બોલો, આજે હું તમારી શું સેવા કરું?"}
     ]
 
