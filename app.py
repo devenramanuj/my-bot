@@ -1,50 +1,44 @@
 import streamlit as st
 import google.generativeai as genai
 
-# --- Page Setup ---
-st.set_page_config(page_title="My Gujarati AI Friend", page_icon="❤️")
-st.title("❤️ મારો AI મિત્ર")
-st.caption("હું તમારી લાગણીઓ સમજું છું. ગુજરાતી કે English માં વાત કરો.")
+st.title("🛠️ બોટ રિપેરિંગ ટૂલ (Tester)")
 
-# --- API Key Setup ---
+# 1. API Key ચેક કરો
 try:
     GOOGLE_API_KEY = st.secrets["GOOGLE_API_KEY"]
     genai.configure(api_key=GOOGLE_API_KEY)
+    st.success("✅ API Key મળી ગઈ છે! (Connection OK)")
 except:
-    st.error("API Key Error: Please check Streamlit secrets.")
+    st.error("❌ API Key નથી મળી. Secrets ચેક કરો.")
     st.stop()
 
-# --- Model Setup (Standard Model) ---
-# આપણે હવે 'gemini-pro' વાપરીશું જે સૌથી સ્ટેબલ છે.
-model = genai.GenerativeModel('gemini-pro')
+# 2. કયા મોડેલ ચાલે છે તે શોધો
+st.write("🔍 તમારા એકાઉન્ટ માટે કયા મોડેલ ઉપલબ્ધ છે તે તપાસી રહ્યો છું...")
 
-# --- Chat History ---
-if "messages" not in st.session_state:
-    st.session_state.messages = []
-    # સ્વાગત સંદેશ
-    st.session_state.messages.append({"role": "assistant", "content": "નમસ્તે! કેમ છો? આજે તમારો મૂડ કેવો છે?"})
+try:
+    available_models = []
+    # લિસ્ટ મેળવો
+    for m in genai.list_models():
+        if 'generateContent' in m.supported_generation_methods:
+            available_models.append(m.name)
 
-# --- Display History ---
-for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.markdown(message["content"])
-
-# --- Chat Logic ---
-if user_input := st.chat_input("અહીં લખો..."):
-    # યુઝરનો મેસેજ
-    with st.chat_message("user"):
-        st.markdown(user_input)
-    st.session_state.messages.append({"role": "user", "content": user_input})
-
-    # AI નો જવાબ
-    try:
-        # મેસેજ મોકલો (સરળ પદ્ધતિ)
-        response = model.generate_content(user_input)
-        ai_text = response.text
+    if available_models:
+        st.success(f"✅ અભિનંદન! કુલ {len(available_models)} મોડેલ મળ્યા છે.")
+        st.code(available_models) # લિસ્ટ બતાવશે
         
-        with st.chat_message("assistant"):
-            st.markdown(ai_text)
-        st.session_state.messages.append({"role": "assistant", "content": ai_text})
+        # સૌથી પહેલું મોડેલ ટેસ્ટ કરો
+        test_model = available_models[0]
+        st.write(f"🧪 ટેસ્ટિંગ: {test_model}...")
+        
+        model = genai.GenerativeModel(test_model)
+        response = model.generate_content("Hello AI")
+        
+        st.balloons()
+        st.success(f"🎉 કામ થઈ ગયું! આ મોડેલ ચાલે છે: {test_model}")
+        st.info("AI નો જવાબ: " + response.text)
+        
+    else:
+        st.error("❌ વિચિત્ર! API Key સાચી છે પણ કોઈ મોડેલ દેખાતા નથી.")
 
-    except Exception as e:
-        st.error(f"Error: {e}")
+except Exception as e:
+    st.error(f"❌ ટેસ્ટિંગમાં ભૂલ આવી: {e}")
