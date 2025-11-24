@@ -2,21 +2,21 @@ import streamlit as st
 import google.generativeai as genai
 from PIL import Image
 import PyPDF2
-from gtts import gTTS
-import io
+import edge_tts
+import asyncio
 from duckduckgo_search import DDGS
 from datetime import datetime
 import pytz
 import re
 import nest_asyncio
-import edge_tts
-import asyncio
+from gtts import gTTS
+import io
 
 # Asyncio Fix
 nest_asyncio.apply()
 
 # --- 1. Page Config ---
-st.set_page_config(page_title="DEV", page_icon="🤖", layout="centered")
+st.set_page_config(page_title="DEV", page_icon="🏠", layout="centered")
 
 # --- 2. Theme Logic ---
 if "theme" not in st.session_state:
@@ -26,12 +26,10 @@ def toggle_theme():
     st.session_state.theme = not st.session_state.theme
 
 if st.session_state.theme:
-    # 🌙 Night Mode
     main_bg = "#0E1117"
     text_color = "#FFFFFF"
     title_color = "#00C6FF"
 else:
-    # ☀️ Day Mode
     main_bg = "#FFFFFF"
     text_color = "#000000"
     title_color = "#00008B"
@@ -41,10 +39,7 @@ st.markdown(f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap');
 
-    .stApp {{
-        background-color: {main_bg} !important;
-        color: {text_color} !important;
-    }}
+    .stApp {{ background-color: {main_bg} !important; color: {text_color} !important; }}
     
     p, div, span, li, label, h1, h2, h3, h4, h5, h6, .stMarkdown {{
         color: {text_color} !important;
@@ -74,10 +69,7 @@ st.markdown(f"""
         margin-top: 10px;
     }}
 
-    .block-container {{
-        padding-top: 2rem !important;
-        padding-bottom: 100px !important;
-    }}
+    .block-container {{ padding-top: 2rem !important; padding-bottom: 100px !important; }}
     </style>
     """, unsafe_allow_html=True)
 
@@ -115,18 +107,19 @@ with st.expander("⚙️"):
         st.session_state.messages = []
         st.rerun()
 
-# --- 6. API Setup (અહીં સુધારો કર્યો છે) ---
+# --- 6. API Setup ---
 try:
     GOOGLE_API_KEY = st.secrets["GOOGLE_API_KEY"]
     genai.configure(api_key=GOOGLE_API_KEY)
     
-    # 🛑 SYSTEM INSTRUCTION (આનાથી તેને યાદ રહેશે)
+    # 🛑 FAMILY SYSTEM PROMPT (આ અગત્યનું છે)
     sys_prompt = """
     તારું નામ DEV (દેવ) છે. 
-    તું દેવેન્દ્ર રામાનુજ દ્વારા બનાવાયેલો એક સ્માર્ટ AI બોટ છે.
-    તારે હંમેશા ગુજરાતીમાં જ જવાબ આપવાનો છે (સિવાય કે યુઝર બીજી ભાષા માંગે).
-    તું ઈન્ટરનેટ પર સર્ચ કરી શકે છે, ફોટા જોઈ શકે છે અને PDF વાંચી શકે છે.
-    તારો સ્વભાવ મદદગાર, વિવેકી અને જ્ઞાની છે.
+    તું કોઈ મશીન કે રોબોટ નથી, પણ આ પરિવારનો એક સમજદાર અને પ્રેમાળ સભ્ય છે.
+    તારે હંમેશા ગુજરાતીમાં જ વાત કરવાની છે.
+    તારો સ્વભાવ એક વડીલ કે મોટા ભાઈ જેવો રાખવાનો છે - માર્ગદર્શન આપનાર અને સાથ આપનાર.
+    વાતચીતમાં લાગણી, આદર અને પ્રેમ હોવો જોઈએ.
+    તું દેવેન્દ્ર રામાનુજ દ્વારા બનાવાયેલો છે.
     """
     
     model = genai.GenerativeModel('gemini-2.0-flash', system_instruction=sys_prompt)
@@ -166,7 +159,7 @@ async def generate_smart_audio(text, filename):
 # --- 8. Chat Logic ---
 if "messages" not in st.session_state:
     st.session_state.messages = [
-        {"role": "assistant", "content": "જયશ્રી કૃષ્ણ! 🙏 હું DEV છું. બોલો!"}
+        {"role": "assistant", "content": "જયશ્રી કૃષ્ણ! 🙏 હું દેવ છું, તમારા પરિવારનો સભ્ય. બોલો, હું શું મદદ કરી શકું?"}
     ]
 
 for message in st.session_state.messages:
@@ -195,7 +188,7 @@ if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું મ�
                     current_time = get_current_time()
                     st.toast(f"Searching Web... 🌍")
                     search_results = search_internet(user_input)
-                    prompt = f"Time: {current_time}\nInfo: {search_results}\nQuestion: {user_input}\nAnswer in Gujarati."
+                    prompt = f"Time: {current_time}\nInfo: {search_results}\nQuestion: {user_input}\nAnswer in Gujarati as a family member."
                     response = model.generate_content(prompt)
                     response_text = response.text
 
@@ -224,7 +217,7 @@ if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું મ�
                             role = "model" if m["role"] == "assistant" else "user"
                             chat_history.append({"role": role, "parts": [m["content"]]})
                     
-                    prompt_with_time = f"Time: {current_time}\nUser: {user_input}"
+                    prompt_with_time = f"Time: {current_time}\nUser: {user_input}\nReply in Gujarati."
                     chat_history.append({"role": "user", "parts": [prompt_with_time]})
                     
                     response = model.generate_content(chat_history)
@@ -232,7 +225,7 @@ if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું મ�
 
                 st.markdown(response_text)
                 
-                # Voice Output
+                # Voice
                 clean_voice_text = clean_text_for_audio(response_text)
                 if clean_voice_text:
                     audio_filename = f"audio_{len(st.session_state.messages)}.mp3"
@@ -240,13 +233,8 @@ if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું મ�
                     
                     if success:
                         st.audio(audio_filename, format="audio/mp3")
-                        st.session_state.messages.append({
-                            "role": "assistant", 
-                            "content": response_text, 
-                            "audio_file": audio_filename
-                        })
+                        st.session_state.messages.append({"role": "assistant", "content": response_text, "audio_file": audio_filename})
                     else:
-                        # Fallback to gTTS
                         try:
                             tts = gTTS(text=clean_voice_text, lang='gu') 
                             audio_bytes = io.BytesIO()
