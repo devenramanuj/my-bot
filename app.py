@@ -6,7 +6,7 @@ from gtts import gTTS
 import io
 from duckduckgo_search import DDGS
 from datetime import datetime
-import pytz # સમય માટે
+import pytz
 
 # --- 1. Page Config ---
 st.set_page_config(page_title="DEV", page_icon="🤖", layout="centered")
@@ -29,7 +29,7 @@ else:
     text_color = "#000000"
     title_color = "#00008B"
 
-# --- 3. CSS Styling (Color Fix) ---
+# --- 3. CSS Styling ---
 st.markdown(f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap');
@@ -39,26 +39,22 @@ st.markdown(f"""
         color: {text_color} !important;
     }}
     
-    /* સામાન્ય ટેક્સ્ટ */
     p, div, span, li, label, h1, h2, h3, h4, h5, h6, .stMarkdown {{
         color: {text_color} !important;
     }}
     
-    /* 🛑 SETTINGS MENU FIX (Expander) */
-    /* સેટિંગ્સ બોક્સ હંમેશા સફેદ અને અક્ષરો કાળા */
+    /* Settings Menu Fix (Expander) */
     .streamlit-expanderContent {{
         background-color: #FFFFFF !important;
-        color: #000000 !important;
-        border: 1px solid #000000;
+        border: 1px solid #000000 !important;
         border-radius: 10px;
     }}
     
-    /* મેનુની અંદરના બધા લેબલ અને લખાણ કાળા */
     .streamlit-expanderContent label, 
     .streamlit-expanderContent p, 
     .streamlit-expanderContent span, 
     .streamlit-expanderContent div {{
-        color: #000000 !important;
+        color: #000000 !important; /* મેનુમાં હંમેશા કાળા અક્ષર */
     }}
 
     /* Title Font */
@@ -89,19 +85,17 @@ st.markdown(f"""
 
 st.write("---")
 
-# --- 5. Settings Menu (Only Symbol ⚙️) ---
+# --- 5. Settings Menu (Symbol Only) ---
 web_search = False
 
-# અહીં નામ બદલીને માત્ર આઈકન રાખ્યું છે
 with st.expander("⚙️"):
-    
     col_a, col_b = st.columns(2)
     with col_a:
         st.write("###### 🎨 Theme")
         st.toggle("🌗 Mode", value=st.session_state.theme, on_change=toggle_theme)
     with col_b:
         st.write("###### 🌍 Internet")
-        web_search = st.toggle("Live Search") # આ ચાલુ કરશો તો જ ભાવ બતાવશે
+        web_search = st.toggle("Live Search")
     
     st.divider()
     st.write("###### 📂 Files")
@@ -121,27 +115,24 @@ except:
     st.error("Error: Please check API Key.")
     st.stop()
 
-# --- 7. Functions (Internet & Time) ---
-
-# સમય મેળવવાનું ફંક્શન
+# --- 7. Functions ---
 def get_current_time():
     IST = pytz.timezone('Asia/Kolkata')
     now = datetime.now(IST)
     return now.strftime("%Y-%m-%d %H:%M:%S %p")
 
-# ઇન્ટરનેટ સર્ચ ફંક્શન
 def search_internet(query):
     try:
-        # DDGS સીધું કોલ કરીએ
         results = DDGS().text(query, max_results=3)
         if results:
-            return "\n".join([f"- {r['body']}" for r in results])
-        return "No results found on internet."
+            results_list = list(results)
+            return "\n".join([f"- {r['body']}" for r in results_list])
+        return "No results found."
     except Exception as e:
         return f"Search Error: {e}"
 
-# --- 8. Chat Logic ---
-if "messages" not in st.session_state.messages:
+# --- 8. Chat Logic (Error Fixed Here) ---
+if "messages" not in st.session_state:
     st.session_state.messages = [
         {"role": "assistant", "content": "જયશ્રી કૃષ્ણ! 🙏 હું DEV છું. બોલો!"}
     ]
@@ -165,58 +156,48 @@ if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું મ�
             with st.spinner("તપાસ કરી રહ્યો છું..."):
                 response_text = ""
                 
-                # 1. Internet Search Logic (જો સ્વિચ ચાલુ હોય)
+                # 1. Internet Search
                 if web_search:
-                    current_time = get_current_time() # અત્યારનો સમય
-                    st.toast(f"Searching Live... 🌍 ({current_time})")
+                    current_time = get_current_time()
+                    # User feedback
+                    st.toast(f"Searching Web... 🌍", icon="🔍")
                     
                     search_results = search_internet(user_input)
-                    
-                    # AI ને સમય અને સર્ચ રિઝલ્ટ બંને આપો
-                    prompt = f"""
-                    Current Date & Time in India: {current_time}
-                    
-                    Internet Search Results:
-                    {search_results}
-                    
-                    User Question: {user_input}
-                    
-                    Answer in Gujarati. If asking for price/news, use the search results.
-                    """
+                    prompt = f"Time: {current_time}\nInfo: {search_results}\nQuestion: {user_input}\nAnswer in Gujarati."
                     response = model.generate_content(prompt)
                     response_text = response.text
 
-                # 2. Image Logic
+                # 2. Image
                 elif uploaded_file is not None and uploaded_file.name.endswith(('.jpg', '.png', '.jpeg')):
                     image = Image.open(uploaded_file)
                     response = model.generate_content([user_input, image])
                     response_text = response.text
                 
-                # 3. PDF Logic
+                # 3. PDF
                 elif uploaded_file is not None and uploaded_file.name.endswith('.pdf'):
                     pdf_reader = PyPDF2.PdfReader(uploaded_file)
                     pdf_text = ""
                     for page in pdf_reader.pages:
                         pdf_text += page.extract_text()
-                    prompt = f"PDF Context:\n{pdf_text}\n\nQuestion: {user_input}"
+                    prompt = f"PDF: {pdf_text}\nQuestion: {user_input}"
                     response = model.generate_content(prompt)
                     response_text = response.text
                 
                 # 4. Normal Chat
                 else:
-                    # સામાન્ય વાતમાં પણ સમયની ખબર હોવી જોઈએ
                     current_time = get_current_time()
-                    prompt = f"Current Time: {current_time}\nUser: {user_input}\nReply in Gujarati."
+                    # સમયની જાણકારી સાથે પ્રોમ્પ્ટ
+                    prompt_with_time = f"Current Time in India: {current_time}\nUser Question: {user_input}\nReply in Gujarati."
                     
-                    # હિસ્ટ્રી સાથે મોકલો
+                    # હિસ્ટ્રી મોકલો
                     chat_history = []
                     for m in st.session_state.messages:
                         if m["role"] != "system" and "audio" not in m:
                             role = "model" if m["role"] == "assistant" else "user"
                             chat_history.append({"role": role, "parts": [m["content"]]})
                     
-                    # છેલ્લે નવો પ્રોમ્પ્ટ ઉમેરો
-                    chat_history.append({"role": "user", "parts": [prompt]})
+                    # છેલ્લો સવાલ સમય સાથે જોડો
+                    chat_history.append({"role": "user", "parts": [prompt_with_time]})
                     
                     response = model.generate_content(chat_history)
                     response_text = response.text
