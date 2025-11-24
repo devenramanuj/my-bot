@@ -19,19 +19,17 @@ def toggle_theme():
     st.session_state.theme = not st.session_state.theme
 
 if st.session_state.theme:
-    # 🌙 Night Mode
     main_bg = "#0E1117"
     text_color = "#FFFFFF"
     title_color = "#00C6FF"
-    input_bg = "#262730" # ઈનપુટ બોક્સનો કલર
+    input_bg = "#262730"
 else:
-    # ☀️ Day Mode
     main_bg = "#FFFFFF"
     text_color = "#000000"
     title_color = "#00008B"
-    input_bg = "#F0F2F6" # ઈનપુટ બોક્સનો કલર
+    input_bg = "#F0F2F6"
 
-# --- 3. CSS Styling (Keyboard Fix) ---
+# --- 3. CSS Styling (Strong Fix) ---
 st.markdown(f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap');
@@ -45,7 +43,9 @@ st.markdown(f"""
         color: {text_color} !important;
     }}
     
-    /* 🛑 KEYBOARD VISIBILITY FIX (આ મહત્વનું છે) */
+    /* 🛑 KEYBOARD & BUTTON OVERLAP FIX */
+    
+    /* 1. ચેટ બોક્સને સૌથી ઉપર લાવો (Top Layer) */
     .stChatInput {{
         position: fixed !important;
         bottom: 0px !important;
@@ -53,33 +53,34 @@ st.markdown(f"""
         right: 0px !important;
         padding-bottom: 15px !important;
         padding-top: 15px !important;
-        padding-left: 10px !important;
-        padding-right: 10px !important;
-        background-color: {main_bg} !important; /* પાછળનો કલર સોલિડ */
-        z-index: 999999 !important; /* સૌથી ઉપર */
-        border-top: 1px solid {text_color}; /* અલગ પાડવા લાઈન */
+        background-color: {main_bg} !important;
+        z-index: 9999999 !important; /* સૌથી મોટો નંબર */
+        border-top: 1px solid {text_color};
     }}
     
-    /* મેસેજ લિસ્ટ નીચે દબાઈ ન જાય તે માટે જગ્યા */
-    .block-container {{
-        padding-top: 2rem !important;
-        padding-bottom: 120px !important; /* નીચે વધારે જગ્યા છોડી */
+    /* 2. Manage App બટનને ગાયબ કરો (જે નડે છે) */
+    div[data-testid="stStatusWidget"] {{
+        display: none !important;
+        visibility: hidden !important;
+        pointer-events: none !important; /* ક્લિક પણ ન થાય */
+    }}
+    
+    /* 3. Send બટનને ખાસ ઉપર લાવો */
+    button[data-testid="stChatInputSubmitButton"] {{
+        z-index: 10000000 !important; /* ચેટ બોક્સ કરતા પણ ઉપર */
+        background-color: transparent !important;
     }}
 
-    /* Settings Menu Styling */
+    /* Settings Menu Fix */
     .streamlit-expanderContent {{
         background-color: #FFFFFF !important;
         border: 1px solid #000000 !important;
         border-radius: 10px;
     }}
-    .streamlit-expanderContent label, 
-    .streamlit-expanderContent p, 
-    .streamlit-expanderContent span, 
-    .streamlit-expanderContent div {{
+    .streamlit-expanderContent * {{
         color: #000000 !important;
     }}
 
-    /* Title Font */
     h1 {{
         font-family: 'Orbitron', sans-serif !important;
         color: {title_color} !important;
@@ -90,6 +91,7 @@ st.markdown(f"""
 
     /* Hide Elements */
     [data-testid="stSidebar"], [data-testid="stToolbar"], footer, header {{ display: none !important; }}
+    .block-container {{ padding-top: 2rem !important; padding-bottom: 100px !important; }}
     </style>
     """, unsafe_allow_html=True)
 
@@ -106,7 +108,7 @@ st.markdown(f"""
 
 st.write("---")
 
-# --- 5. Settings Menu (Symbol Only) ---
+# --- 5. Settings Menu ---
 web_search = False
 
 with st.expander("⚙️"):
@@ -198,7 +200,7 @@ if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું મ�
                     pdf_text = ""
                     for page in pdf_reader.pages:
                         pdf_text += page.extract_text()
-                    prompt = f"PDF Context:\n{pdf_text}\n\nQuestion: {user_input}"
+                    prompt = f"PDF: {pdf_text}\nQuestion: {user_input}"
                     response = model.generate_content(prompt)
                     response_text = response.text
                 
