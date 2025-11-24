@@ -2,8 +2,6 @@ streamlit>=1.40.0
 google-generativeai>=0.7.0
 Pillow
 PyPDF2
-duckduckgo-search
-edge-tts
-nest_asyncio
 gTTS
+duckduckgo-search
 pytz
