@@ -4,6 +4,6 @@ Pillow
 PyPDF2
 duckduckgo-search
 edge-tts
-pytz
 nest_asyncio
 gTTS
+pytz
