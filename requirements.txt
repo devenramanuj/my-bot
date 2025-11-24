@@ -4,3 +4,4 @@ Pillow
 PyPDF2
 gTTS
 duckduckgo-search
+pytz
