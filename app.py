@@ -19,40 +19,59 @@ def toggle_theme():
     st.session_state.theme = not st.session_state.theme
 
 if st.session_state.theme:
-    # 🌙 Night Mode
     main_bg = "#0E1117"
     text_color = "#FFFFFF"
     title_color = "#00C6FF"
 else:
-    # ☀️ Day Mode
     main_bg = "#FFFFFF"
     text_color = "#000000"
     title_color = "#00008B"
 
-# --- 3. CSS Styling (Simple & Clean) ---
+# --- 3. CSS Styling (Footer Killer) ---
 st.markdown(f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap');
 
+    /* Main Background */
     .stApp {{
         background-color: {main_bg} !important;
         color: {text_color} !important;
     }}
     
+    /* Text Colors */
     p, div, span, li, label, h1, h2, h3, h4, h5, h6, .stMarkdown {{
         color: {text_color} !important;
     }}
+
+    /* ------------------------------------------------------- */
+    /* 🛑 FOOTER & LOGO REMOVER (આ કોડ નીચેનું બધું સાફ કરશે) */
+    /* ------------------------------------------------------- */
     
-    /* 🛑 LOGO REMOVER (Manage App Button Hide) */
+    /* 1. નીચેનું "Made with Streamlit" લખાણ સાફ */
+    footer {{
+        visibility: hidden !important;
+        display: none !important;
+        height: 0px !important;
+    }}
+    
+    /* 2. જમણી બાજુ નીચેનું "Manage App" બટન સાફ */
     div[data-testid="stStatusWidget"] {{
         visibility: hidden !important;
         display: none !important;
     }}
     
-    /* Header & Footer Hide */
-    [data-testid="stSidebar"], [data-testid="stToolbar"], footer, header {{
+    /* 3. હેડર અને મેનુ બટન સાફ */
+    header {{
+        visibility: hidden !important;
         display: none !important;
     }}
+    
+    /* 4. કોઈપણ Toolbar સાફ */
+    [data-testid="stToolbar"] {{
+        display: none !important;
+    }}
+
+    /* ------------------------------------------------------- */
 
     /* Settings Menu Fix */
     .streamlit-expanderContent {{
@@ -72,11 +91,17 @@ st.markdown(f"""
         font-size: 3rem !important;
         margin-top: 10px;
     }}
-    
-    /* નીચે થોડી જગ્યા જેથી ચેટ દબાઈ ન જાય */
+
+    /* Chat Box Background (જેથી પાછળ કઈ દેખાય નહીં) */
+    .stChatInput {{
+        background-color: {main_bg} !important;
+        padding-bottom: 20px !important;
+    }}
+
+    /* Extra Space at Bottom */
     .block-container {{
         padding-top: 2rem !important;
-        padding-bottom: 150px !important;
+        padding-bottom: 120px !important;
     }}
     </style>
     """, unsafe_allow_html=True)
@@ -142,7 +167,7 @@ def search_internet(query):
 # --- 8. Chat Logic ---
 if "messages" not in st.session_state:
     st.session_state.messages = [
-        {"role": "assistant", "content": "જયશ્રી કૃષ્ણ! 🙏 હું DEV છું."}
+        {"role": "assistant", "content": "જયશ્રી કૃષ્ણ! 🙏 હું DEV છું. બોલો!"}
     ]
 
 for message in st.session_state.messages:
@@ -161,7 +186,7 @@ if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું મ�
 
     try:
         with st.chat_message("assistant", avatar="🤖"):
-            with st.spinner("Thinking..."):
+            with st.spinner("વિચારી રહ્યો છું..."):
                 response_text = ""
                 
                 # 1. Internet
