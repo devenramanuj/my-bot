@@ -2,17 +2,23 @@ import streamlit as st
 import google.generativeai as genai
 from PIL import Image
 import PyPDF2
-import edge_tts # નવી લાઈબ્રેરી (Male Voice માટે)
-import asyncio # અવાજ પ્રોસેસ કરવા માટે
+import edge_tts
+import asyncio
 from duckduckgo_search import DDGS
 from datetime import datetime
 import pytz
 import re
+import nest_asyncio # આ લાઈબ્રેરી લૂપ ફિક્સ કરશે
+from gtts import gTTS
+import io
 
-# --- 1. Page Config ---
+# --- 1. Apply Asyncio Fix ---
+nest_asyncio.apply()
+
+# --- 2. Page Config ---
 st.set_page_config(page_title="DEV", page_icon="🤖", layout="centered")
 
-# --- 2. Theme Logic ---
+# --- 3. Theme Logic ---
 if "theme" not in st.session_state:
     st.session_state.theme = False
 
@@ -30,7 +36,7 @@ else:
     text_color = "#000000"
     title_color = "#00008B"
 
-# --- 3. CSS Styling ---
+# --- 4. CSS Styling ---
 st.markdown(f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap');
@@ -75,7 +81,7 @@ st.markdown(f"""
     </style>
     """, unsafe_allow_html=True)
 
-# --- 4. Layout ---
+# --- 5. Layout ---
 st.markdown(f"""
     <h1 style='display: flex; align-items: center; justify-content: center; gap: 15px;'>
         <img src="https://cdn-icons-png.flaticon.com/512/2040/2040946.png" width="50" height="50" style="vertical-align: middle;">
@@ -88,7 +94,7 @@ st.markdown(f"""
 
 st.write("---")
 
-# --- 5. Settings Menu ---
+# --- 6. Settings Menu ---
 web_search = False
 
 with st.expander("⚙️"):
@@ -109,7 +115,7 @@ with st.expander("⚙️"):
         st.session_state.messages = []
         st.rerun()
 
-# --- 6. API Setup ---
+# --- 7. API Setup ---
 try:
     GOOGLE_API_KEY = st.secrets["GOOGLE_API_KEY"]
     genai.configure(api_key=GOOGLE_API_KEY)
@@ -118,7 +124,7 @@ except:
     st.error("Error: Please check API Key.")
     st.stop()
 
-# --- 7. Functions ---
+# --- 8. Functions ---
 def get_current_time():
     IST = pytz.timezone('Asia/Kolkata')
     now = datetime.now(IST)
@@ -135,18 +141,20 @@ def search_internet(query):
 
 def clean_text_for_audio(text):
     clean = re.sub(r'[*#_`~]', '', text)
-    return clean
+    return clean.strip()
 
-# 🛑 NEW MALE VOICE FUNCTION (Async)
-async def generate_male_audio(text, filename="response.mp3"):
-    # gu-IN-NiranjanNeural = Male Voice
-    # gu-IN-DhwaniNeural = Female Voice
-    voice = "gu-IN-NiranjanNeural" 
-    communicate = edge_tts.Communicate(text, voice)
-    await communicate.save(filename)
-    return filename
+# 🛑 SMART VOICE FUNCTION (Male -> Fail -> Female)
+async def generate_smart_audio(text, filename):
+    try:
+        # પ્રયત્ન 1: પુરુષ અવાજ (Male - Edge TTS)
+        voice = "gu-IN-NiranjanNeural" 
+        communicate = edge_tts.Communicate(text, voice)
+        await communicate.save(filename)
+        return True # સફળ
+    except Exception as e:
+        return False # નિષ્ફળ
 
-# --- 8. Chat Logic ---
+# --- 9. Chat Logic ---
 if "messages" not in st.session_state:
     st.session_state.messages = [
         {"role": "assistant", "content": "જયશ્રી કૃષ્ણ! 🙏 હું DEV છું. બોલો!"}
@@ -158,8 +166,10 @@ for message in st.session_state.messages:
         st.markdown(message["content"])
         if "audio_file" in message:
             st.audio(message["audio_file"], format="audio/mp3")
+        elif "audio_bytes" in message:
+            st.audio(message["audio_bytes"], format="audio/mp3")
 
-# --- 9. Input Processing ---
+# --- 10. Input Processing ---
 if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું માઈક 🎙️ વાપરો)"):
     
     with st.chat_message("user", avatar="👤"):
@@ -201,7 +211,7 @@ if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું મ�
                     current_time = get_current_time()
                     chat_history = []
                     for m in st.session_state.messages:
-                        if m["role"] != "system" and "audio_file" not in m:
+                        if m["role"] != "system" and "audio_file" not in m and "audio_bytes" not in m:
                             role = "model" if m["role"] == "assistant" else "user"
                             chat_history.append({"role": role, "parts": [m["content"]]})
                     
@@ -214,27 +224,39 @@ if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું મ�
                 # લખાણ બતાવો
                 st.markdown(response_text)
                 
-                # 🛑 MALE VOICE GENERATION
-                try:
-                    clean_voice_text = clean_text_for_audio(response_text)
-                    
-                    # અવાજની ફાઈલ બનાવો (Unique Name જેથી મિક્સ ન થાય)
+                # 🛑 VOICE GENERATION LOGIC
+                clean_voice_text = clean_text_for_audio(response_text)
+                
+                if clean_voice_text: # જો લખાણ હોય તો જ બોલો
                     audio_filename = f"audio_{len(st.session_state.messages)}.mp3"
                     
-                    # Run Async Function
-                    asyncio.run(generate_male_audio(clean_voice_text, audio_filename))
+                    # 1. Try Male Voice
+                    success = asyncio.run(generate_smart_audio(clean_voice_text, audio_filename))
                     
-                    # Play Audio
-                    st.audio(audio_filename, format="audio/mp3")
-                    
-                    # Save to History
-                    st.session_state.messages.append({
-                        "role": "assistant", 
-                        "content": response_text, 
-                        "audio_file": audio_filename
-                    })
-                except Exception as e:
-                    st.warning(f"Voice Error: {e}")
+                    if success:
+                        st.audio(audio_filename, format="audio/mp3")
+                        st.session_state.messages.append({
+                            "role": "assistant", 
+                            "content": response_text, 
+                            "audio_file": audio_filename
+                        })
+                    else:
+                        # 2. Fallback to Female Voice (gTTS)
+                        try:
+                            tts = gTTS(text=clean_voice_text, lang='gu') 
+                            audio_bytes = io.BytesIO()
+                            tts.write_to_fp(audio_bytes)
+                            audio_bytes.seek(0)
+                            st.audio(audio_bytes, format="audio/mp3")
+                            st.session_state.messages.append({
+                                "role": "assistant", 
+                                "content": response_text, 
+                                "audio_bytes": audio_bytes
+                            })
+                        except:
+                            st.warning("Audio failed.")
+                            st.session_state.messages.append({"role": "assistant", "content": response_text})
+                else:
                     st.session_state.messages.append({"role": "assistant", "content": response_text})
 
     except Exception as e:
