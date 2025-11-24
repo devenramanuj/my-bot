@@ -2,17 +2,17 @@ import streamlit as st
 import google.generativeai as genai
 from PIL import Image
 import PyPDF2
-import edge_tts
+import edge_tts # પુરુષ અવાજ માટે
 import asyncio
+import nest_asyncio # લૂપ એરર ફિક્સ કરવા
+from gtts import gTTS
+import io
 from duckduckgo_search import DDGS
 from datetime import datetime
 import pytz
 import re
-import nest_asyncio
-from gtts import gTTS
-import io
 
-# Asyncio Fix
+# 🛑 Asyncio Fix (આ લાઈન બહુ મહત્વની છે)
 nest_asyncio.apply()
 
 # --- 1. Page Config ---
@@ -26,10 +26,12 @@ def toggle_theme():
     st.session_state.theme = not st.session_state.theme
 
 if st.session_state.theme:
+    # 🌙 Night Mode
     main_bg = "#0E1117"
     text_color = "#FFFFFF"
     title_color = "#00C6FF"
 else:
+    # ☀️ Day Mode
     main_bg = "#FFFFFF"
     text_color = "#000000"
     title_color = "#00008B"
@@ -39,7 +41,10 @@ st.markdown(f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap');
 
-    .stApp {{ background-color: {main_bg} !important; color: {text_color} !important; }}
+    .stApp {{
+        background-color: {main_bg} !important;
+        color: {text_color} !important;
+    }}
     
     p, div, span, li, label, h1, h2, h3, h4, h5, h6, .stMarkdown {{
         color: {text_color} !important;
@@ -69,7 +74,10 @@ st.markdown(f"""
         margin-top: 10px;
     }}
 
-    .block-container {{ padding-top: 2rem !important; padding-bottom: 100px !important; }}
+    .block-container {{
+        padding-top: 2rem !important;
+        padding-bottom: 100px !important;
+    }}
     </style>
     """, unsafe_allow_html=True)
 
@@ -112,13 +120,12 @@ try:
     GOOGLE_API_KEY = st.secrets["GOOGLE_API_KEY"]
     genai.configure(api_key=GOOGLE_API_KEY)
     
-    # 🛑 FAMILY SYSTEM PROMPT (આ અગત્યનું છે)
+    # FAMILY SYSTEM PROMPT
     sys_prompt = """
     તારું નામ DEV (દેવ) છે. 
     તું કોઈ મશીન કે રોબોટ નથી, પણ આ પરિવારનો એક સમજદાર અને પ્રેમાળ સભ્ય છે.
     તારે હંમેશા ગુજરાતીમાં જ વાત કરવાની છે.
-    તારો સ્વભાવ એક વડીલ કે મોટા ભાઈ જેવો રાખવાનો છે - માર્ગદર્શન આપનાર અને સાથ આપનાર.
-    વાતચીતમાં લાગણી, આદર અને પ્રેમ હોવો જોઈએ.
+    તારો સ્વભાવ એક વડીલ કે મોટા ભાઈ જેવો રાખવાનો છે.
     તું દેવેન્દ્ર રામાનુજ દ્વારા બનાવાયેલો છે.
     """
     
@@ -147,8 +154,10 @@ def clean_text_for_audio(text):
     clean = re.sub(r'[*#_`~]', '', text)
     return clean.strip()
 
-async def generate_smart_audio(text, filename):
+# 🛑 MALE VOICE GENERATOR (Special Function)
+async def generate_male_audio(text, filename):
     try:
+        # ગુજરાતી પુરુષ અવાજ
         voice = "gu-IN-NiranjanNeural" 
         communicate = edge_tts.Communicate(text, voice)
         await communicate.save(filename)
@@ -159,7 +168,7 @@ async def generate_smart_audio(text, filename):
 # --- 8. Chat Logic ---
 if "messages" not in st.session_state:
     st.session_state.messages = [
-        {"role": "assistant", "content": "જયશ્રી કૃષ્ણ! 🙏 હું દેવ છું, તમારા પરિવારનો સભ્ય. બોલો, હું શું મદદ કરી શકું?"}
+        {"role": "assistant", "content": "જયશ્રી કૃષ્ણ! 🙏 હું દેવ છું, તમારા પરિવારનો સભ્ય."}
     ]
 
 for message in st.session_state.messages:
@@ -225,16 +234,25 @@ if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું મ�
 
                 st.markdown(response_text)
                 
-                # Voice
+                # 🛑 VOICE OUTPUT LOGIC (Priority: Male -> Fallback: Female)
                 clean_voice_text = clean_text_for_audio(response_text)
+                
                 if clean_voice_text:
+                    # અવાજની નવી ફાઈલ બનાવો
                     audio_filename = f"audio_{len(st.session_state.messages)}.mp3"
-                    success = asyncio.run(generate_smart_audio(clean_voice_text, audio_filename))
+                    
+                    # 1. Try Male Voice
+                    success = asyncio.run(generate_male_audio(clean_voice_text, audio_filename))
                     
                     if success:
                         st.audio(audio_filename, format="audio/mp3")
-                        st.session_state.messages.append({"role": "assistant", "content": response_text, "audio_file": audio_filename})
+                        st.session_state.messages.append({
+                            "role": "assistant", 
+                            "content": response_text, 
+                            "audio_file": audio_filename
+                        })
                     else:
+                        # 2. If Male Fails, Use Female (gTTS)
                         try:
                             tts = gTTS(text=clean_voice_text, lang='gu') 
                             audio_bytes = io.BytesIO()
