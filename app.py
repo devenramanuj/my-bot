@@ -23,13 +23,15 @@ if st.session_state.theme:
     main_bg = "#0E1117"
     text_color = "#FFFFFF"
     title_color = "#00C6FF"
+    input_bg = "#262730" # ઈનપુટ બોક્સનો કલર
 else:
     # ☀️ Day Mode
     main_bg = "#FFFFFF"
     text_color = "#000000"
     title_color = "#00008B"
+    input_bg = "#F0F2F6" # ઈનપુટ બોક્સનો કલર
 
-# --- 3. CSS Styling ---
+# --- 3. CSS Styling (Keyboard Fix) ---
 st.markdown(f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap');
@@ -43,18 +45,38 @@ st.markdown(f"""
         color: {text_color} !important;
     }}
     
-    /* Settings Menu Fix (Expander) */
+    /* 🛑 KEYBOARD VISIBILITY FIX (આ મહત્વનું છે) */
+    .stChatInput {{
+        position: fixed !important;
+        bottom: 0px !important;
+        left: 0px !important;
+        right: 0px !important;
+        padding-bottom: 15px !important;
+        padding-top: 15px !important;
+        padding-left: 10px !important;
+        padding-right: 10px !important;
+        background-color: {main_bg} !important; /* પાછળનો કલર સોલિડ */
+        z-index: 999999 !important; /* સૌથી ઉપર */
+        border-top: 1px solid {text_color}; /* અલગ પાડવા લાઈન */
+    }}
+    
+    /* મેસેજ લિસ્ટ નીચે દબાઈ ન જાય તે માટે જગ્યા */
+    .block-container {{
+        padding-top: 2rem !important;
+        padding-bottom: 120px !important; /* નીચે વધારે જગ્યા છોડી */
+    }}
+
+    /* Settings Menu Styling */
     .streamlit-expanderContent {{
         background-color: #FFFFFF !important;
         border: 1px solid #000000 !important;
         border-radius: 10px;
     }}
-    
     .streamlit-expanderContent label, 
     .streamlit-expanderContent p, 
     .streamlit-expanderContent span, 
     .streamlit-expanderContent div {{
-        color: #000000 !important; /* મેનુમાં હંમેશા કાળા અક્ષર */
+        color: #000000 !important;
     }}
 
     /* Title Font */
@@ -68,7 +90,6 @@ st.markdown(f"""
 
     /* Hide Elements */
     [data-testid="stSidebar"], [data-testid="stToolbar"], footer, header {{ display: none !important; }}
-    .block-container {{ padding-top: 2rem !important; padding-bottom: 5rem !important; }}
     </style>
     """, unsafe_allow_html=True)
 
@@ -131,7 +152,7 @@ def search_internet(query):
     except Exception as e:
         return f"Search Error: {e}"
 
-# --- 8. Chat Logic (Error Fixed Here) ---
+# --- 8. Chat Logic ---
 if "messages" not in st.session_state:
     st.session_state.messages = [
         {"role": "assistant", "content": "જયશ્રી કૃષ્ણ! 🙏 હું DEV છું. બોલો!"}
@@ -159,9 +180,7 @@ if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું મ�
                 # 1. Internet Search
                 if web_search:
                     current_time = get_current_time()
-                    # User feedback
                     st.toast(f"Searching Web... 🌍", icon="🔍")
-                    
                     search_results = search_internet(user_input)
                     prompt = f"Time: {current_time}\nInfo: {search_results}\nQuestion: {user_input}\nAnswer in Gujarati."
                     response = model.generate_content(prompt)
@@ -179,24 +198,20 @@ if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું મ�
                     pdf_text = ""
                     for page in pdf_reader.pages:
                         pdf_text += page.extract_text()
-                    prompt = f"PDF: {pdf_text}\nQuestion: {user_input}"
+                    prompt = f"PDF Context:\n{pdf_text}\n\nQuestion: {user_input}"
                     response = model.generate_content(prompt)
                     response_text = response.text
                 
                 # 4. Normal Chat
                 else:
                     current_time = get_current_time()
-                    # સમયની જાણકારી સાથે પ્રોમ્પ્ટ
-                    prompt_with_time = f"Current Time in India: {current_time}\nUser Question: {user_input}\nReply in Gujarati."
-                    
-                    # હિસ્ટ્રી મોકલો
                     chat_history = []
                     for m in st.session_state.messages:
                         if m["role"] != "system" and "audio" not in m:
                             role = "model" if m["role"] == "assistant" else "user"
                             chat_history.append({"role": role, "parts": [m["content"]]})
                     
-                    # છેલ્લો સવાલ સમય સાથે જોડો
+                    prompt_with_time = f"Current Time: {current_time}\nUser: {user_input}\nReply in Gujarati."
                     chat_history.append({"role": "user", "parts": [prompt_with_time]})
                     
                     response = model.generate_content(chat_history)
