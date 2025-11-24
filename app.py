@@ -2,18 +2,12 @@ import streamlit as st
 import google.generativeai as genai
 from PIL import Image
 import PyPDF2
-import edge_tts # પુરુષ અવાજ માટે
-import asyncio
-import nest_asyncio # લૂપ એરર ફિક્સ કરવા
 from gtts import gTTS
 import io
 from duckduckgo_search import DDGS
 from datetime import datetime
 import pytz
 import re
-
-# 🛑 Asyncio Fix (આ લાઈન બહુ મહત્વની છે)
-nest_asyncio.apply()
 
 # --- 1. Page Config ---
 st.set_page_config(page_title="DEV", page_icon="🏠", layout="centered")
@@ -50,13 +44,13 @@ st.markdown(f"""
         color: {text_color} !important;
     }}
 
-    /* Hide Elements */
+    /* Hide Unwanted Elements */
     header, footer, #MainMenu, div[data-testid="stStatusWidget"], .stDeployButton {{
         display: none !important;
         visibility: hidden !important;
     }}
 
-    /* Settings Menu */
+    /* Settings Menu Style */
     .streamlit-expanderContent {{
         background-color: #FFFFFF !important;
         border: 1px solid #000000 !important;
@@ -120,17 +114,14 @@ try:
     GOOGLE_API_KEY = st.secrets["GOOGLE_API_KEY"]
     genai.configure(api_key=GOOGLE_API_KEY)
     
-    # FAMILY SYSTEM PROMPT
+    # Family Prompt
     sys_prompt = """
     તારું નામ DEV (દેવ) છે. 
-    તું કોઈ મશીન કે રોબોટ નથી, પણ આ પરિવારનો એક સમજદાર અને પ્રેમાળ સભ્ય છે.
+    તું દેવેન્દ્ર રામાનુજ દ્વારા બનાવાયેલો પરિવારનો એક સમજદાર સભ્ય છે.
     તારે હંમેશા ગુજરાતીમાં જ વાત કરવાની છે.
-    તારો સ્વભાવ એક વડીલ કે મોટા ભાઈ જેવો રાખવાનો છે.
-    તું દેવેન્દ્ર રામાનુજ દ્વારા બનાવાયેલો છે.
+    તારો સ્વભાવ પ્રેમાળ અને મદદગાર છે.
     """
-    
     model = genai.GenerativeModel('gemini-2.0-flash', system_instruction=sys_prompt)
-
 except:
     st.error("Error: Please check API Key.")
     st.stop()
@@ -154,30 +145,17 @@ def clean_text_for_audio(text):
     clean = re.sub(r'[*#_`~]', '', text)
     return clean.strip()
 
-# 🛑 MALE VOICE GENERATOR (Special Function)
-async def generate_male_audio(text, filename):
-    try:
-        # ગુજરાતી પુરુષ અવાજ
-        voice = "gu-IN-NiranjanNeural" 
-        communicate = edge_tts.Communicate(text, voice)
-        await communicate.save(filename)
-        return True
-    except:
-        return False
-
 # --- 8. Chat Logic ---
 if "messages" not in st.session_state:
     st.session_state.messages = [
-        {"role": "assistant", "content": "જયશ્રી કૃષ્ણ! 🙏 હું દેવ છું, તમારા પરિવારનો સભ્ય."}
+        {"role": "assistant", "content": "જયશ્રી કૃષ્ણ! 🙏 હું દેવ છું. બોલો!"}
     ]
 
 for message in st.session_state.messages:
     avatar = "🤖" if message["role"] == "assistant" else "👤"
     with st.chat_message(message["role"], avatar=avatar):
         st.markdown(message["content"])
-        if "audio_file" in message:
-            st.audio(message["audio_file"], format="audio/mp3")
-        elif "audio_bytes" in message:
+        if "audio_bytes" in message:
             st.audio(message["audio_bytes"], format="audio/mp3")
 
 # --- 9. Input Processing ---
@@ -222,7 +200,7 @@ if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું મ�
                     current_time = get_current_time()
                     chat_history = []
                     for m in st.session_state.messages:
-                        if m["role"] != "system" and "audio_file" not in m and "audio_bytes" not in m:
+                        if m["role"] != "system" and "audio_bytes" not in m:
                             role = "model" if m["role"] == "assistant" else "user"
                             chat_history.append({"role": role, "parts": [m["content"]]})
                     
@@ -232,37 +210,23 @@ if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું મ�
                     response = model.generate_content(chat_history)
                     response_text = response.text
 
+                # લખાણ બતાવો
                 st.markdown(response_text)
                 
-                # 🛑 VOICE OUTPUT LOGIC (Priority: Male -> Fallback: Female)
-                clean_voice_text = clean_text_for_audio(response_text)
-                
-                if clean_voice_text:
-                    # અવાજની નવી ફાઈલ બનાવો
-                    audio_filename = f"audio_{len(st.session_state.messages)}.mp3"
-                    
-                    # 1. Try Male Voice
-                    success = asyncio.run(generate_male_audio(clean_voice_text, audio_filename))
-                    
-                    if success:
-                        st.audio(audio_filename, format="audio/mp3")
-                        st.session_state.messages.append({
-                            "role": "assistant", 
-                            "content": response_text, 
-                            "audio_file": audio_filename
-                        })
+                # 🛑 FAST VOICE GENERATION (Only Female)
+                try:
+                    clean_voice_text = clean_text_for_audio(response_text)
+                    if clean_voice_text:
+                        tts = gTTS(text=clean_voice_text, lang='gu') 
+                        audio_bytes = io.BytesIO()
+                        tts.write_to_fp(audio_bytes)
+                        audio_bytes.seek(0)
+                        
+                        st.audio(audio_bytes, format="audio/mp3")
+                        st.session_state.messages.append({"role": "assistant", "content": response_text, "audio_bytes": audio_bytes})
                     else:
-                        # 2. If Male Fails, Use Female (gTTS)
-                        try:
-                            tts = gTTS(text=clean_voice_text, lang='gu') 
-                            audio_bytes = io.BytesIO()
-                            tts.write_to_fp(audio_bytes)
-                            audio_bytes.seek(0)
-                            st.audio(audio_bytes, format="audio/mp3")
-                            st.session_state.messages.append({"role": "assistant", "content": response_text, "audio_bytes": audio_bytes})
-                        except:
-                            st.session_state.messages.append({"role": "assistant", "content": response_text})
-                else:
+                        st.session_state.messages.append({"role": "assistant", "content": response_text})
+                except:
                     st.session_state.messages.append({"role": "assistant", "content": response_text})
 
     except Exception as e:
