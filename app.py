@@ -10,7 +10,7 @@ import pytz
 import re
 
 # --- 1. Page Config ---
-st.set_page_config(page_title="DEV", page_icon="🏠", layout="centered")
+st.set_page_config(page_title="DEV", page_icon="😊", layout="centered")
 
 # --- 2. Theme Logic ---
 if "theme" not in st.session_state:
@@ -114,13 +114,17 @@ try:
     GOOGLE_API_KEY = st.secrets["GOOGLE_API_KEY"]
     genai.configure(api_key=GOOGLE_API_KEY)
     
-    # Family Prompt
+    # 🛑 POLITE BUT WITTY SYSTEM PROMPT (સુધારેલો સ્વભાવ)
     sys_prompt = """
-    તારું નામ DEV (દેવ) છે. 
-    તું દેવેન્દ્ર રામાનુજ દ્વારા બનાવાયેલો પરિવારનો એક સમજદાર સભ્ય છે.
-    તારે હંમેશા ગુજરાતીમાં જ વાત કરવાની છે.
-    તારો સ્વભાવ પ્રેમાળ અને મદદગાર છે.
+    તારું નામ DEV (દેવ) છે. તું દેવેન્દ્ર રામાનુજ દ્વારા બનાવાયેલો પરિવારનો એક સભ્ય છે.
+    
+    તારો સ્વભાવ:
+    1. તારે હંમેશા ગુજરાતીમાં જ વાત કરવાની છે.
+    2. તારે વિવેકી અને આદરપૂર્વક વાત કરવાની છે.
+    3. વાતચીતને રસપ્રદ બનાવવા માટે વચ્ચે-વચ્ચે હળવી રમુજ (Light Humor) કરજે, પણ કોઈનું અપમાન ન થાય તેનું ધ્યાન રાખજે.
+    4. તું એક સમજદાર અને ખુશખુશાલ વ્યક્તિત્વ ધરાવે છે.
     """
+    
     model = genai.GenerativeModel('gemini-2.0-flash', system_instruction=sys_prompt)
 except:
     st.error("Error: Please check API Key.")
@@ -148,7 +152,8 @@ def clean_text_for_audio(text):
 # --- 8. Chat Logic ---
 if "messages" not in st.session_state:
     st.session_state.messages = [
-        {"role": "assistant", "content": "જયશ્રી કૃષ્ણ! 🙏 હું દેવ છું. બોલો!"}
+        # અહીં હવે વિવેકી મેસેજ છે
+        {"role": "assistant", "content": "જયશ્રી કૃષ્ણ! 🙏 હું DEV છું. કેમ છો બધા? આજે આપણે શું નવું જાણીશું? 😊"}
     ]
 
 for message in st.session_state.messages:
@@ -175,7 +180,7 @@ if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું મ�
                     current_time = get_current_time()
                     st.toast(f"Searching Web... 🌍")
                     search_results = search_internet(user_input)
-                    prompt = f"Time: {current_time}\nInfo: {search_results}\nQuestion: {user_input}\nAnswer in Gujarati as a family member."
+                    prompt = f"Time: {current_time}\nInfo: {search_results}\nQuestion: {user_input}\nAnswer in Gujarati politely with light humor."
                     response = model.generate_content(prompt)
                     response_text = response.text
 
@@ -204,7 +209,8 @@ if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું મ�
                             role = "model" if m["role"] == "assistant" else "user"
                             chat_history.append({"role": role, "parts": [m["content"]]})
                     
-                    prompt_with_time = f"Time: {current_time}\nUser: {user_input}\nReply in Gujarati."
+                    # અહીં સૂચના આપી કે હળવી મજાક કરવી
+                    prompt_with_time = f"Current Time: {current_time}\nUser: {user_input}\nReply in Gujarati. Be helpful, polite and use light humor/wit occasionally."
                     chat_history.append({"role": "user", "parts": [prompt_with_time]})
                     
                     response = model.generate_content(chat_history)
@@ -213,7 +219,7 @@ if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું મ�
                 # લખાણ બતાવો
                 st.markdown(response_text)
                 
-                # 🛑 FAST VOICE GENERATION (Only Female)
+                # 🛑 FAST VOICE (Female)
                 try:
                     clean_voice_text = clean_text_for_audio(response_text)
                     if clean_voice_text:
