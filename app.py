@@ -19,17 +19,17 @@ def toggle_theme():
     st.session_state.theme = not st.session_state.theme
 
 if st.session_state.theme:
+    # 🌙 Night Mode
     main_bg = "#0E1117"
     text_color = "#FFFFFF"
     title_color = "#00C6FF"
-    input_bg = "#262730"
 else:
+    # ☀️ Day Mode
     main_bg = "#FFFFFF"
     text_color = "#000000"
     title_color = "#00008B"
-    input_bg = "#F0F2F6"
 
-# --- 3. CSS Styling (Strong Fix) ---
+# --- 3. CSS Styling (Simple & Clean) ---
 st.markdown(f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap');
@@ -43,32 +43,15 @@ st.markdown(f"""
         color: {text_color} !important;
     }}
     
-    /* 🛑 KEYBOARD & BUTTON OVERLAP FIX */
-    
-    /* 1. ચેટ બોક્સને સૌથી ઉપર લાવો (Top Layer) */
-    .stChatInput {{
-        position: fixed !important;
-        bottom: 0px !important;
-        left: 0px !important;
-        right: 0px !important;
-        padding-bottom: 15px !important;
-        padding-top: 15px !important;
-        background-color: {main_bg} !important;
-        z-index: 9999999 !important; /* સૌથી મોટો નંબર */
-        border-top: 1px solid {text_color};
-    }}
-    
-    /* 2. Manage App બટનને ગાયબ કરો (જે નડે છે) */
+    /* 🛑 LOGO REMOVER (Manage App Button Hide) */
     div[data-testid="stStatusWidget"] {{
-        display: none !important;
         visibility: hidden !important;
-        pointer-events: none !important; /* ક્લિક પણ ન થાય */
+        display: none !important;
     }}
     
-    /* 3. Send બટનને ખાસ ઉપર લાવો */
-    button[data-testid="stChatInputSubmitButton"] {{
-        z-index: 10000000 !important; /* ચેટ બોક્સ કરતા પણ ઉપર */
-        background-color: transparent !important;
+    /* Header & Footer Hide */
+    [data-testid="stSidebar"], [data-testid="stToolbar"], footer, header {{
+        display: none !important;
     }}
 
     /* Settings Menu Fix */
@@ -81,6 +64,7 @@ st.markdown(f"""
         color: #000000 !important;
     }}
 
+    /* Title Font */
     h1 {{
         font-family: 'Orbitron', sans-serif !important;
         color: {title_color} !important;
@@ -88,10 +72,12 @@ st.markdown(f"""
         font-size: 3rem !important;
         margin-top: 10px;
     }}
-
-    /* Hide Elements */
-    [data-testid="stSidebar"], [data-testid="stToolbar"], footer, header {{ display: none !important; }}
-    .block-container {{ padding-top: 2rem !important; padding-bottom: 100px !important; }}
+    
+    /* નીચે થોડી જગ્યા જેથી ચેટ દબાઈ ન જાય */
+    .block-container {{
+        padding-top: 2rem !important;
+        padding-bottom: 150px !important;
+    }}
     </style>
     """, unsafe_allow_html=True)
 
@@ -148,8 +134,7 @@ def search_internet(query):
     try:
         results = DDGS().text(query, max_results=3)
         if results:
-            results_list = list(results)
-            return "\n".join([f"- {r['body']}" for r in results_list])
+            return "\n".join([f"- {r['body']}" for r in results])
         return "No results found."
     except Exception as e:
         return f"Search Error: {e}"
@@ -157,7 +142,7 @@ def search_internet(query):
 # --- 8. Chat Logic ---
 if "messages" not in st.session_state:
     st.session_state.messages = [
-        {"role": "assistant", "content": "જયશ્રી કૃષ્ણ! 🙏 હું DEV છું. બોલો!"}
+        {"role": "assistant", "content": "જયશ્રી કૃષ્ણ! 🙏 હું DEV છું."}
     ]
 
 for message in st.session_state.messages:
@@ -176,13 +161,13 @@ if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું મ�
 
     try:
         with st.chat_message("assistant", avatar="🤖"):
-            with st.spinner("તપાસ કરી રહ્યો છું..."):
+            with st.spinner("Thinking..."):
                 response_text = ""
                 
-                # 1. Internet Search
+                # 1. Internet
                 if web_search:
                     current_time = get_current_time()
-                    st.toast(f"Searching Web... 🌍", icon="🔍")
+                    st.toast("Searching Web... 🌍")
                     search_results = search_internet(user_input)
                     prompt = f"Time: {current_time}\nInfo: {search_results}\nQuestion: {user_input}\nAnswer in Gujarati."
                     response = model.generate_content(prompt)
@@ -204,7 +189,7 @@ if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું મ�
                     response = model.generate_content(prompt)
                     response_text = response.text
                 
-                # 4. Normal Chat
+                # 4. Normal
                 else:
                     current_time = get_current_time()
                     chat_history = []
@@ -213,7 +198,7 @@ if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું મ�
                             role = "model" if m["role"] == "assistant" else "user"
                             chat_history.append({"role": role, "parts": [m["content"]]})
                     
-                    prompt_with_time = f"Current Time: {current_time}\nUser: {user_input}\nReply in Gujarati."
+                    prompt_with_time = f"Time: {current_time}\nUser: {user_input}\nReply in Gujarati."
                     chat_history.append({"role": "user", "parts": [prompt_with_time]})
                     
                     response = model.generate_content(chat_history)
