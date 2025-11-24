@@ -2,12 +2,12 @@ import streamlit as st
 import google.generativeai as genai
 from PIL import Image
 import PyPDF2
-from gtts import gTTS
-import io
+import edge_tts # નવી લાઈબ્રેરી (Male Voice માટે)
+import asyncio # અવાજ પ્રોસેસ કરવા માટે
 from duckduckgo_search import DDGS
 from datetime import datetime
 import pytz
-import re # ટેક્સ્ટ સાફ કરવા માટે
+import re
 
 # --- 1. Page Config ---
 st.set_page_config(page_title="DEV", page_icon="🤖", layout="centered")
@@ -30,51 +30,27 @@ else:
     text_color = "#000000"
     title_color = "#00008B"
 
-# --- 3. CSS Styling (Strong Fix) ---
+# --- 3. CSS Styling ---
 st.markdown(f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap');
 
-    /* Main Background */
     .stApp {{
         background-color: {main_bg} !important;
         color: {text_color} !important;
     }}
     
-    /* Text Colors */
     p, div, span, li, label, h1, h2, h3, h4, h5, h6, .stMarkdown {{
         color: {text_color} !important;
     }}
 
-    /* 🛑 ULTIMATE MOBILE CLEANER */
-    /* આ કોડ હેડર અને ફુટરને જબરદસ્તી છુપાવશે */
-    header {{
+    /* Hide Elements */
+    header, footer, #MainMenu, div[data-testid="stStatusWidget"], .stDeployButton {{
+        display: none !important;
         visibility: hidden !important;
-        display: none !important;
-    }}
-    
-    /* Streamlit Menu & Footer */
-    #MainMenu {{
-        visibility: hidden !important;
-        display: none !important;
-    }}
-    footer {{
-        visibility: hidden !important;
-        display: none !important;
-    }}
-    
-    /* Right Bottom Button */
-    div[data-testid="stStatusWidget"] {{
-        visibility: hidden !important;
-        display: none !important;
-    }}
-    
-    /* Deploy Button */
-    .stDeployButton {{
-        display: none !important;
     }}
 
-    /* Settings Menu Fix */
+    /* Settings Menu */
     .streamlit-expanderContent {{
         background-color: #FFFFFF !important;
         border: 1px solid #000000 !important;
@@ -84,7 +60,6 @@ st.markdown(f"""
         color: #000000 !important;
     }}
 
-    /* Title Font */
     h1 {{
         font-family: 'Orbitron', sans-serif !important;
         color: {title_color} !important;
@@ -158,11 +133,18 @@ def search_internet(query):
     except Exception as e:
         return f"Search Error: {e}"
 
-# 🛑 CLEAN TEXT FOR AUDIO (નવું ફંક્શન)
 def clean_text_for_audio(text):
-    # ચિન્હો દૂર કરો (*, #, -, _)
     clean = re.sub(r'[*#_`~]', '', text)
     return clean
+
+# 🛑 NEW MALE VOICE FUNCTION (Async)
+async def generate_male_audio(text, filename="response.mp3"):
+    # gu-IN-NiranjanNeural = Male Voice
+    # gu-IN-DhwaniNeural = Female Voice
+    voice = "gu-IN-NiranjanNeural" 
+    communicate = edge_tts.Communicate(text, voice)
+    await communicate.save(filename)
+    return filename
 
 # --- 8. Chat Logic ---
 if "messages" not in st.session_state:
@@ -174,8 +156,8 @@ for message in st.session_state.messages:
     avatar = "🤖" if message["role"] == "assistant" else "👤"
     with st.chat_message(message["role"], avatar=avatar):
         st.markdown(message["content"])
-        if "audio" in message:
-            st.audio(message["audio"], format="audio/mp3")
+        if "audio_file" in message:
+            st.audio(message["audio_file"], format="audio/mp3")
 
 # --- 9. Input Processing ---
 if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું માઈક 🎙️ વાપરો)"):
@@ -192,7 +174,7 @@ if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું મ�
                 # 1. Internet
                 if web_search:
                     current_time = get_current_time()
-                    st.toast("Searching Web... 🌍")
+                    st.toast(f"Searching Web... 🌍")
                     search_results = search_internet(user_input)
                     prompt = f"Time: {current_time}\nInfo: {search_results}\nQuestion: {user_input}\nAnswer in Gujarati."
                     response = model.generate_content(prompt)
@@ -219,7 +201,7 @@ if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું મ�
                     current_time = get_current_time()
                     chat_history = []
                     for m in st.session_state.messages:
-                        if m["role"] != "system" and "audio" not in m:
+                        if m["role"] != "system" and "audio_file" not in m:
                             role = "model" if m["role"] == "assistant" else "user"
                             chat_history.append({"role": role, "parts": [m["content"]]})
                     
@@ -229,21 +211,30 @@ if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું મ�
                     response = model.generate_content(chat_history)
                     response_text = response.text
 
-                # લખાણ બતાવો (ચિન્હો સાથે, જેથી વાંચવામાં સારું લાગે)
+                # લખાણ બતાવો
                 st.markdown(response_text)
                 
-                # Voice Output (ચિન્હો વગરનું, જેથી સાંભળવામાં સારું લાગે)
+                # 🛑 MALE VOICE GENERATION
                 try:
-                    # અહીં આપણે સાફ કરેલું ટેક્સ્ટ વાપરીશું
                     clean_voice_text = clean_text_for_audio(response_text)
                     
-                    tts = gTTS(text=clean_voice_text, lang='gu') 
-                    audio_bytes = io.BytesIO()
-                    tts.write_to_fp(audio_bytes)
-                    audio_bytes.seek(0)
-                    st.audio(audio_bytes, format="audio/mp3")
-                    st.session_state.messages.append({"role": "assistant", "content": response_text, "audio": audio_bytes})
-                except:
+                    # અવાજની ફાઈલ બનાવો (Unique Name જેથી મિક્સ ન થાય)
+                    audio_filename = f"audio_{len(st.session_state.messages)}.mp3"
+                    
+                    # Run Async Function
+                    asyncio.run(generate_male_audio(clean_voice_text, audio_filename))
+                    
+                    # Play Audio
+                    st.audio(audio_filename, format="audio/mp3")
+                    
+                    # Save to History
+                    st.session_state.messages.append({
+                        "role": "assistant", 
+                        "content": response_text, 
+                        "audio_file": audio_filename
+                    })
+                except Exception as e:
+                    st.warning(f"Voice Error: {e}")
                     st.session_state.messages.append({"role": "assistant", "content": response_text})
 
     except Exception as e:
