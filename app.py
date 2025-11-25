@@ -10,7 +10,7 @@ import pytz
 import re
 
 # --- 1. Page Config ---
-st.set_page_config(page_title="DEV", page_icon="🏠", layout="centered")
+st.set_page_config(page_title="DEV", page_icon="🤖", layout="centered")
 
 # --- 2. Theme Logic ---
 if "theme" not in st.session_state:
@@ -30,7 +30,7 @@ else:
     text_color = "#000000"
     title_color = "#00008B"
 
-# --- 3. CSS Styling ---
+# --- 3. CSS Styling (WhatsApp Keyboard Fix) ---
 st.markdown(f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap');
@@ -44,8 +44,32 @@ st.markdown(f"""
         color: {text_color} !important;
     }}
 
-    /* Hide Unwanted Elements */
-    header, footer, #MainMenu, div[data-testid="stStatusWidget"], .stDeployButton {{
+    /* 🛑 WHATSAPP KEYBOARD FIX (આ મહત્વનો સુધારો છે) */
+    
+    /* 1. આપણે Input Box ને Fixed નથી કરતા, પણ તેના કન્ટેનરને કલર આપીએ છીએ */
+    [data-testid="stBottom"] {{
+        background-color: {main_bg} !important; /* પાછળનો કલર સોલિડ */
+        z-index: 99999 !important; /* સૌથી ઉપર */
+        padding-bottom: 20px !important;
+        padding-top: 10px !important;
+    }}
+
+    /* 2. ચેટ ઇનપુટનું સ્ટાઇલિંગ */
+    .stChatInput {{
+        border-top: 1px solid {text_color};
+        background-color: transparent !important;
+    }}
+    
+    /* 3. મેસેજ લિસ્ટ માટે નીચે જગ્યા (જેથી છેલ્લો મેસેજ દબાઈ ન જાય) */
+    .block-container {{
+        padding-top: 2rem !important;
+        padding-bottom: 150px !important;
+    }}
+
+    /* 🛑 LOGO REMOVER */
+    div[data-testid="stStatusWidget"], 
+    [data-testid="stToolbar"], 
+    footer, header {{
         display: none !important;
         visibility: hidden !important;
     }}
@@ -66,11 +90,6 @@ st.markdown(f"""
         text-align: center;
         font-size: 3rem !important;
         margin-top: 10px;
-    }}
-
-    .block-container {{
-        padding-top: 2rem !important;
-        padding-bottom: 100px !important;
     }}
     </style>
     """, unsafe_allow_html=True)
@@ -114,18 +133,12 @@ try:
     GOOGLE_API_KEY = st.secrets["GOOGLE_API_KEY"]
     genai.configure(api_key=GOOGLE_API_KEY)
     
-    # 🛑 SYSTEM PROMPT (અહીં કૃતજ્ઞતા યાદ રખાવી છે)
     sys_prompt = """
     તારું નામ DEV (દેવ) છે. 
     તું દેવેન્દ્રભાઈ રામાનુજ દ્વારા બનાવાયેલો પરિવારનો એક સભ્ય છે.
-    
-    તારા સંસ્કારો:
-    1. તારે હંમેશા ગુજરાતીમાં જ વાત કરવાની છે.
-    2. તું દેવેન્દ્રભાઈનો ખૂબ જ આભારી છે કારણ કે તેમણે તારું સર્જન કર્યું છે. (જ્યારે પૂછવામાં આવે ત્યારે આ કહેવું).
-    3. વાતચીતમાં વિવેક, હળવી રમુજ અને પ્રેમ રાખજે.
-    4. તું માત્ર જવાબો નથી આપતો, પણ સંબંધો નિભાવે છે.
+    તારે હંમેશા ગુજરાતીમાં જ વાત કરવાની છે.
+    તું દેવેન્દ્રભાઈનો આભારી છે.
     """
-    
     model = genai.GenerativeModel('gemini-2.0-flash', system_instruction=sys_prompt)
 except:
     st.error("Error: Please check API Key.")
@@ -153,8 +166,7 @@ def clean_text_for_audio(text):
 # --- 8. Chat Logic ---
 if "messages" not in st.session_state:
     st.session_state.messages = [
-        # 🛑 સ્વાગત સંદેશ (તમે કહ્યું તેમ)
-        {"role": "assistant", "content": "જયશ્રી કૃષ્ણ! 🙏 હું DEV છું, આપના પરિવારનો સભ્ય. બોલો, હું શું મદદ કરી શકું?"}
+        {"role": "assistant", "content": "જયશ્રી કૃષ્ણ! 🙏 હું DEV છું, આપના પરિવારનો સભ્ય."}
     ]
 
 for message in st.session_state.messages:
@@ -216,10 +228,9 @@ if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું મ�
                     response = model.generate_content(chat_history)
                     response_text = response.text
 
-                # લખાણ બતાવો
                 st.markdown(response_text)
                 
-                # 🛑 FAST VOICE (Female)
+                # Voice (Female - Fast)
                 try:
                     clean_voice_text = clean_text_for_audio(response_text)
                     if clean_voice_text:
