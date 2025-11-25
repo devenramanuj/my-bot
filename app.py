@@ -30,7 +30,7 @@ else:
     text_color = "#000000"
     title_color = "#00008B"
 
-# --- 3. CSS Styling (Sticky Fix) ---
+# --- 3. CSS Styling (Clean & Simple) ---
 st.markdown(f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap');
@@ -44,28 +44,13 @@ st.markdown(f"""
         color: {text_color} !important;
     }}
 
-    /* 🛑 WHATSAPP STYLE INPUT (Sticky Bottom) */
-    .stChatInput {{
-        position: fixed !important;
-        bottom: 0 !important;
-        left: 0 !important;
-        right: 0 !important;
-        padding-bottom: 15px !important;
-        padding-top: 15px !important;
-        padding-left: 1rem !important;
-        padding-right: 1rem !important;
-        background-color: {main_bg} !important; /* પાછળનો કલર */
-        z-index: 999999 !important;
-        border-top: 1px solid {text_color};
-    }}
-    
-    /* મેસેજ લિસ્ટ માટે નીચે જગ્યા છોડી (જેથી ચેટ દબાઈ ન જાય) */
-    .block-container {{
-        padding-top: 2rem !important;
-        padding-bottom: 140px !important;
+    /* 🛑 LOGO & FOOTER REMOVER */
+    header, footer, #MainMenu, div[data-testid="stStatusWidget"], .stDeployButton {{
+        display: none !important;
+        visibility: hidden !important;
     }}
 
-    /* Settings Menu Fix */
+    /* Settings Menu */
     .streamlit-expanderContent {{
         background-color: #FFFFFF !important;
         border: 1px solid #000000 !important;
@@ -75,12 +60,6 @@ st.markdown(f"""
         color: #000000 !important;
     }}
 
-    /* Hide Logos */
-    header, footer, #MainMenu, div[data-testid="stStatusWidget"], .stDeployButton {{
-        display: none !important;
-        visibility: hidden !important;
-    }}
-
     /* Title Font */
     h1 {{
         font-family: 'Orbitron', sans-serif !important;
@@ -88,6 +67,12 @@ st.markdown(f"""
         text-align: center;
         font-size: 3rem !important;
         margin-top: 10px;
+    }}
+
+    /* Space at bottom */
+    .block-container {{
+        padding-top: 2rem !important;
+        padding-bottom: 100px !important;
     }}
     </style>
     """, unsafe_allow_html=True)
@@ -135,7 +120,7 @@ try:
     તારું નામ DEV (દેવ) છે. 
     તું દેવેન્દ્રભાઈ રામાનુજ દ્વારા બનાવાયેલો પરિવારનો એક સભ્ય છે.
     તારે હંમેશા ગુજરાતીમાં જ વાત કરવાની છે.
-    તારે દેવેન્દ્રભાઈનો આભારી છે.
+    તારે દેવેન્દ્રભાઈનો આભાર માનવાનો છે.
     """
     model = genai.GenerativeModel('gemini-2.0-flash', system_instruction=sys_prompt)
 except:
@@ -191,7 +176,7 @@ if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું મ�
                     current_time = get_current_time()
                     st.toast(f"Searching Web... 🌍")
                     search_results = search_internet(user_input)
-                    prompt = f"Time: {current_time}\nInfo: {search_results}\nQuestion: {user_input}\nAnswer in Gujarati politely with light humor."
+                    prompt = f"Time: {current_time}\nInfo: {search_results}\nQuestion: {user_input}\nAnswer in Gujarati."
                     response = model.generate_content(prompt)
                     response_text = response.text
 
@@ -220,7 +205,7 @@ if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું મ�
                             role = "model" if m["role"] == "assistant" else "user"
                             chat_history.append({"role": role, "parts": [m["content"]]})
                     
-                    prompt_with_time = f"Current Time: {current_time}\nUser: {user_input}\nReply in Gujarati. Be helpful, polite and act like a family member."
+                    prompt_with_time = f"Time: {current_time}\nUser: {user_input}\nReply in Gujarati."
                     chat_history.append({"role": "user", "parts": [prompt_with_time]})
                     
                     response = model.generate_content(chat_history)
@@ -228,7 +213,7 @@ if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું મ�
 
                 st.markdown(response_text)
                 
-                # Voice (Female)
+                # Voice
                 try:
                     clean_voice_text = clean_text_for_audio(response_text)
                     if clean_voice_text:
