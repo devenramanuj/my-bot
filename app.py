@@ -30,7 +30,7 @@ else:
     text_color = "#000000"
     title_color = "#00008B"
 
-# --- 3. CSS Styling (Clean & Simple) ---
+# --- 3. CSS Styling (WhatsApp Style + Clean UI) ---
 st.markdown(f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap');
@@ -44,10 +44,23 @@ st.markdown(f"""
         color: {text_color} !important;
     }}
 
-    /* 🛑 LOGO & FOOTER REMOVER */
+    /* 🛑 LOGO REMOVER */
     header, footer, #MainMenu, div[data-testid="stStatusWidget"], .stDeployButton {{
         display: none !important;
         visibility: hidden !important;
+    }}
+
+    /* 🛑 WHATSAPP KEYBOARD FIX */
+    .stChatInput {{
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        padding-bottom: 15px !important;
+        padding-top: 15px !important;
+        background-color: {main_bg} !important;
+        z-index: 999999 !important;
+        border-top: 1px solid {text_color};
     }}
 
     /* Settings Menu */
@@ -60,7 +73,6 @@ st.markdown(f"""
         color: #000000 !important;
     }}
 
-    /* Title Font */
     h1 {{
         font-family: 'Orbitron', sans-serif !important;
         color: {title_color} !important;
@@ -69,10 +81,9 @@ st.markdown(f"""
         margin-top: 10px;
     }}
 
-    /* Space at bottom */
     .block-container {{
         padding-top: 2rem !important;
-        padding-bottom: 100px !important;
+        padding-bottom: 130px !important; /* ચેટ દબાઈ ન જાય */
     }}
     </style>
     """, unsafe_allow_html=True)
@@ -106,7 +117,6 @@ with st.expander("⚙️"):
     st.write("###### 📂 Files")
     uploaded_file = st.file_uploader("Upload", type=["jpg", "pdf"])
     
-    st.divider()
     if st.button("🗑️ Reset Chat"):
         st.session_state.messages = []
         st.rerun()
@@ -176,7 +186,7 @@ if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું મ�
                     current_time = get_current_time()
                     st.toast(f"Searching Web... 🌍")
                     search_results = search_internet(user_input)
-                    prompt = f"Time: {current_time}\nInfo: {search_results}\nQuestion: {user_input}\nAnswer in Gujarati."
+                    prompt = f"Time: {current_time}\nInfo: {search_results}\nQuestion: {user_input}\nAnswer in Gujarati politely."
                     response = model.generate_content(prompt)
                     response_text = response.text
 
@@ -205,7 +215,7 @@ if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું મ�
                             role = "model" if m["role"] == "assistant" else "user"
                             chat_history.append({"role": role, "parts": [m["content"]]})
                     
-                    prompt_with_time = f"Time: {current_time}\nUser: {user_input}\nReply in Gujarati."
+                    prompt_with_time = f"Current Time: {current_time}\nUser: {user_input}\nReply in Gujarati."
                     chat_history.append({"role": "user", "parts": [prompt_with_time]})
                     
                     response = model.generate_content(chat_history)
@@ -213,7 +223,7 @@ if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું મ�
 
                 st.markdown(response_text)
                 
-                # Voice
+                # Voice (gTTS - Female)
                 try:
                     clean_voice_text = clean_text_for_audio(response_text)
                     if clean_voice_text:
