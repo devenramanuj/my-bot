@@ -30,7 +30,7 @@ else:
     text_color = "#000000"
     title_color = "#00008B"
 
-# --- 3. CSS Styling (WhatsApp Keyboard Fix) ---
+# --- 3. CSS Styling (Native Fix) ---
 st.markdown(f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap');
@@ -44,37 +44,28 @@ st.markdown(f"""
         color: {text_color} !important;
     }}
 
-    /* 🛑 WHATSAPP KEYBOARD FIX (આ મહત્વનો સુધારો છે) */
-    
-    /* 1. આપણે Input Box ને Fixed નથી કરતા, પણ તેના કન્ટેનરને કલર આપીએ છીએ */
-    [data-testid="stBottom"] {{
-        background-color: {main_bg} !important; /* પાછળનો કલર સોલિડ */
-        z-index: 99999 !important; /* સૌથી ઉપર */
-        padding-bottom: 20px !important;
-        padding-top: 10px !important;
-    }}
-
-    /* 2. ચેટ ઇનપુટનું સ્ટાઇલિંગ */
-    .stChatInput {{
-        border-top: 1px solid {text_color};
-        background-color: transparent !important;
-    }}
-    
-    /* 3. મેસેજ લિસ્ટ માટે નીચે જગ્યા (જેથી છેલ્લો મેસેજ દબાઈ ન જાય) */
-    .block-container {{
-        padding-top: 2rem !important;
-        padding-bottom: 150px !important;
-    }}
-
-    /* 🛑 LOGO REMOVER */
-    div[data-testid="stStatusWidget"], 
-    [data-testid="stToolbar"], 
-    footer, header {{
+    /* 🛑 1. LOGO REMOVER (લોગો ગાયબ) */
+    header, footer, #MainMenu, div[data-testid="stStatusWidget"], .stDeployButton {{
         display: none !important;
         visibility: hidden !important;
     }}
 
-    /* Settings Menu Style */
+    /* 🛑 2. KEYBOARD FIX (કી-બોર્ડ માટે સુધારો) */
+    /* આપણે ઇનપુટ બોક્સને ફિક્સ નથી કરતા, પણ તેના કન્ટેનરને કલર આપીએ છીએ */
+    [data-testid="stBottom"] {{
+        background-color: {main_bg} !important;
+        padding-bottom: 20px;
+        padding-top: 20px;
+        z-index: 999;
+    }}
+    
+    /* ઇનપુટ બોક્સની બોર્ડર */
+    .stChatInput {{
+        border-top: 1px solid {text_color};
+        background-color: transparent !important;
+    }}
+
+    /* 🛑 3. SETTINGS MENU FIX (કલર) */
     .streamlit-expanderContent {{
         background-color: #FFFFFF !important;
         border: 1px solid #000000 !important;
@@ -84,12 +75,18 @@ st.markdown(f"""
         color: #000000 !important;
     }}
 
+    /* Title Font */
     h1 {{
         font-family: 'Orbitron', sans-serif !important;
         color: {title_color} !important;
         text-align: center;
         font-size: 3rem !important;
         margin-top: 10px;
+    }}
+
+    .block-container {{
+        padding-top: 2rem !important;
+        padding-bottom: 120px !important; /* ચેટ દબાઈ ન જાય તે માટે */
     }}
     </style>
     """, unsafe_allow_html=True)
@@ -137,7 +134,7 @@ try:
     તારું નામ DEV (દેવ) છે. 
     તું દેવેન્દ્રભાઈ રામાનુજ દ્વારા બનાવાયેલો પરિવારનો એક સભ્ય છે.
     તારે હંમેશા ગુજરાતીમાં જ વાત કરવાની છે.
-    તું દેવેન્દ્રભાઈનો આભારી છે.
+    તારે દેવેન્દ્રભાઈનો આભાર માનવાનો છે.
     """
     model = genai.GenerativeModel('gemini-2.0-flash', system_instruction=sys_prompt)
 except:
@@ -193,7 +190,7 @@ if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું મ�
                     current_time = get_current_time()
                     st.toast(f"Searching Web... 🌍")
                     search_results = search_internet(user_input)
-                    prompt = f"Time: {current_time}\nInfo: {search_results}\nQuestion: {user_input}\nAnswer in Gujarati politely with light humor."
+                    prompt = f"Time: {current_time}\nInfo: {search_results}\nQuestion: {user_input}\nAnswer in Gujarati."
                     response = model.generate_content(prompt)
                     response_text = response.text
 
@@ -222,7 +219,7 @@ if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું મ�
                             role = "model" if m["role"] == "assistant" else "user"
                             chat_history.append({"role": role, "parts": [m["content"]]})
                     
-                    prompt_with_time = f"Current Time: {current_time}\nUser: {user_input}\nReply in Gujarati. Be helpful, polite and act like a family member."
+                    prompt_with_time = f"Time: {current_time}\nUser: {user_input}\nReply in Gujarati."
                     chat_history.append({"role": "user", "parts": [prompt_with_time]})
                     
                     response = model.generate_content(chat_history)
@@ -230,7 +227,7 @@ if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું મ�
 
                 st.markdown(response_text)
                 
-                # Voice (Female - Fast)
+                # Voice (Female)
                 try:
                     clean_voice_text = clean_text_for_audio(response_text)
                     if clean_voice_text:
@@ -238,7 +235,6 @@ if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું મ�
                         audio_bytes = io.BytesIO()
                         tts.write_to_fp(audio_bytes)
                         audio_bytes.seek(0)
-                        
                         st.audio(audio_bytes, format="audio/mp3")
                         st.session_state.messages.append({"role": "assistant", "content": response_text, "audio_bytes": audio_bytes})
                     else:
