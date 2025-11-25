@@ -30,7 +30,7 @@ else:
     text_color = "#000000"
     title_color = "#00008B"
 
-# --- 3. CSS Styling (Native Fix) ---
+# --- 3. CSS Styling (Sticky Fix) ---
 st.markdown(f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap');
@@ -44,28 +44,28 @@ st.markdown(f"""
         color: {text_color} !important;
     }}
 
-    /* 🛑 1. LOGO REMOVER (લોગો ગાયબ) */
-    header, footer, #MainMenu, div[data-testid="stStatusWidget"], .stDeployButton {{
-        display: none !important;
-        visibility: hidden !important;
-    }}
-
-    /* 🛑 2. KEYBOARD FIX (કી-બોર્ડ માટે સુધારો) */
-    /* આપણે ઇનપુટ બોક્સને ફિક્સ નથી કરતા, પણ તેના કન્ટેનરને કલર આપીએ છીએ */
-    [data-testid="stBottom"] {{
-        background-color: {main_bg} !important;
-        padding-bottom: 20px;
-        padding-top: 20px;
-        z-index: 999;
+    /* 🛑 WHATSAPP STYLE INPUT (Sticky Bottom) */
+    .stChatInput {{
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        padding-bottom: 15px !important;
+        padding-top: 15px !important;
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+        background-color: {main_bg} !important; /* પાછળનો કલર */
+        z-index: 999999 !important;
+        border-top: 1px solid {text_color};
     }}
     
-    /* ઇનપુટ બોક્સની બોર્ડર */
-    .stChatInput {{
-        border-top: 1px solid {text_color};
-        background-color: transparent !important;
+    /* મેસેજ લિસ્ટ માટે નીચે જગ્યા છોડી (જેથી ચેટ દબાઈ ન જાય) */
+    .block-container {{
+        padding-top: 2rem !important;
+        padding-bottom: 140px !important;
     }}
 
-    /* 🛑 3. SETTINGS MENU FIX (કલર) */
+    /* Settings Menu Fix */
     .streamlit-expanderContent {{
         background-color: #FFFFFF !important;
         border: 1px solid #000000 !important;
@@ -75,6 +75,12 @@ st.markdown(f"""
         color: #000000 !important;
     }}
 
+    /* Hide Logos */
+    header, footer, #MainMenu, div[data-testid="stStatusWidget"], .stDeployButton {{
+        display: none !important;
+        visibility: hidden !important;
+    }}
+
     /* Title Font */
     h1 {{
         font-family: 'Orbitron', sans-serif !important;
@@ -82,11 +88,6 @@ st.markdown(f"""
         text-align: center;
         font-size: 3rem !important;
         margin-top: 10px;
-    }}
-
-    .block-container {{
-        padding-top: 2rem !important;
-        padding-bottom: 120px !important; /* ચેટ દબાઈ ન જાય તે માટે */
     }}
     </style>
     """, unsafe_allow_html=True)
@@ -134,7 +135,7 @@ try:
     તારું નામ DEV (દેવ) છે. 
     તું દેવેન્દ્રભાઈ રામાનુજ દ્વારા બનાવાયેલો પરિવારનો એક સભ્ય છે.
     તારે હંમેશા ગુજરાતીમાં જ વાત કરવાની છે.
-    તારે દેવેન્દ્રભાઈનો આભાર માનવાનો છે.
+    તારે દેવેન્દ્રભાઈનો આભારી છે.
     """
     model = genai.GenerativeModel('gemini-2.0-flash', system_instruction=sys_prompt)
 except:
@@ -190,7 +191,7 @@ if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું મ�
                     current_time = get_current_time()
                     st.toast(f"Searching Web... 🌍")
                     search_results = search_internet(user_input)
-                    prompt = f"Time: {current_time}\nInfo: {search_results}\nQuestion: {user_input}\nAnswer in Gujarati."
+                    prompt = f"Time: {current_time}\nInfo: {search_results}\nQuestion: {user_input}\nAnswer in Gujarati politely with light humor."
                     response = model.generate_content(prompt)
                     response_text = response.text
 
@@ -219,7 +220,7 @@ if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું મ�
                             role = "model" if m["role"] == "assistant" else "user"
                             chat_history.append({"role": role, "parts": [m["content"]]})
                     
-                    prompt_with_time = f"Time: {current_time}\nUser: {user_input}\nReply in Gujarati."
+                    prompt_with_time = f"Current Time: {current_time}\nUser: {user_input}\nReply in Gujarati. Be helpful, polite and act like a family member."
                     chat_history.append({"role": "user", "parts": [prompt_with_time]})
                     
                     response = model.generate_content(chat_history)
