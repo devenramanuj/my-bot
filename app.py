@@ -28,25 +28,14 @@ else:
     text_color = "#000000"
     title_color = "#00008B"
 
-# --- 3. CSS Styling (The Ultimate Fix) ---
+# --- 3. CSS Styling (UI Fix + Logo Hide) ---
 st.markdown(f"""
-    <style>
-    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap');
-
+<style>
     .stApp {{
         background-color: {main_bg} !important;
         color: {text_color} !important;
     }}
-    
-    p, div, span, li, label, h1, h2, h3, h4, h5, h6, .stMarkdown {{
-        color: {text_color} !important;
-    }}
-
-    /* ============================================================ */
-    /* 🛑 1. LOGO KILLER (લોગોને જડમૂળથી હટાવવા)                  */
-    /* ============================================================ */
-    
-    /* Manage App Button, Decoration, Toolbar, Footer - બધું ગાયબ */
+    /* Hide default Streamlit & GitHub logos / headers / footers */
     div[data-testid="stStatusWidget"],
     div[data-testid="stToolbar"],
     div[data-testid="stDecoration"],
@@ -58,48 +47,9 @@ st.markdown(f"""
         height: 0px !important;
         width: 0px !important;
         opacity: 0 !important;
-        pointer-events: none !important; /* ક્લિક બ્લોક કરો */
-        z-index: -1 !important; /* છેક પાછળ ધકેલો */
+        pointer-events: none !important;
+        z-index: -1 !important;
     }}
-
-    /* ============================================================ */
-    /* 🛑 2. CHAT BOX & SEND BUTTON (સૌથી ઉપર)                    */
-    /* ============================================================ */
-    
-    /* ચેટ બોક્સ કન્ટેનર */
-    [data-testid="stBottom"] {{
-        background-color: {main_bg} !important;
-        z-index: 999999 !important; /* સૌથી ઉપર */
-        padding-bottom: 15px !important;
-        padding-top: 15px !important;
-    }}
-
-    /* ઇનપુટ બોક્સ */
-    .stChatInput {{
-        border-top: 1px solid {text_color};
-        background-color: transparent !important;
-        z-index: 9999999 !important;
-    }}
-    
-    /* Send બટન */
-    button[data-testid="stChatInputSubmitButton"] {{
-        z-index: 10000000 !important; /* લોગો કરતા 1 કરોડ ગણું ઉપર! */
-        background-color: transparent !important;
-        border: none !important;
-    }}
-
-    /* ============================================================ */
-
-    /* Settings Menu */
-    .streamlit-expanderContent {{
-        background-color: #FFFFFF !important;
-        border: 1px solid #000000 !important;
-        border-radius: 10px;
-    }}
-    .streamlit-expanderContent * {{
-        color: #000000 !important;
-    }}
-
     /* Title */
     h1 {{
         font-family: 'Orbitron', sans-serif !important;
@@ -108,31 +58,28 @@ st.markdown(f"""
         font-size: 3rem !important;
         margin-top: 10px;
     }}
-
-    /* મેસેજ દબાઈ ન જાય તે માટે જગ્યા */
     .block-container {{
         padding-top: 2rem !important;
         padding-bottom: 140px !important;
     }}
-    </style>
-    """, unsafe_allow_html=True)
+</style>
+""", unsafe_allow_html=True)
 
-# --- 4. Layout ---
+# --- 4. Layout Header ---
 st.markdown(f"""
-    <h1 style='display: flex; align-items: center; justify-content: center; gap: 15px;'>
-        <img src="https://cdn-icons-png.flaticon.com/512/2040/2040946.png" width="50" height="50" style="vertical-align: middle;">
-        DEV
-    </h1>
-    <div style='text-align: center; color: {text_color}; font-size: 13px; margin-bottom: 10px; opacity: 0.9;'>
-        Developed by <b>Devendra Ramanuj</b> | 📱 9276505035
-    </div>
-    """, unsafe_allow_html=True)
+<h1 style='display: flex; align-items: center; justify-content: center; gap: 15px;'>
+    <img src="https://cdn-icons-png.flaticon.com/512/2040/2040946.png" width="50" height="50" style="vertical-align: middle;">
+    DEV
+</h1>
+<div style='text-align: center; color: {text_color}; font-size: 13px; margin-bottom: 10px; opacity: 0.9;'>
+    Developed by <b>Devendra Ramanuj</b> | 📱 9276505035
+</div>
+""", unsafe_allow_html=True)
 
 st.write("---")
 
 # --- 5. Settings Menu ---
 web_search = False
-
 with st.expander("⚙️"):
     col_a, col_b = st.columns(2)
     with col_a:
@@ -192,6 +139,7 @@ if "messages" not in st.session_state:
         {"role": "assistant", "content": "જયશ્રી કૃષ્ણ! 🙏 હું DEV છું, આપના પરિવારનો સભ્ય."}
     ]
 
+# Display all messages
 for message in st.session_state.messages:
     avatar = "🤖" if message["role"] == "assistant" else "👤"
     with st.chat_message(message["role"], avatar=avatar):
@@ -199,45 +147,34 @@ for message in st.session_state.messages:
         if "audio_bytes" in message:
             st.audio(message["audio_bytes"], format="audio/mp3")
 
-# --- 9. Input Processing ---
-if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું માઈક 🎙️ વાપરો)"):
-    
-    with st.chat_message("user", avatar="👤"):
-        st.markdown(user_input)
-    st.session_state.messages.append({"role": "user", "content": user_input})
+# --- 9. Live Typing Preview & Input ---
+typing_preview = st.empty()  # Placeholder for live preview
 
-    try:
-        with st.chat_message("assistant", avatar="🤖"):
-            with st.spinner("વિચારી રહ્યો છું..."):
-                response_text = ""
-                
-                # 1. Internet
-                if web_search:
-                    current_time = get_current_time()
-                    st.toast(f"Searching Web... 🌍")
-                    search_results = search_internet(user_input)
-                    prompt = f"Time: {current_time}\nInfo: {search_results}\nQuestion: {user_input}\nAnswer in Gujarati."
-                    response = model.generate_content(prompt)
-                    response_text = response.text
+user_input = st.text_area("Ask DEV... (કી-બોર્ડનું માઈક 🎙️ વાપરો)", height=80)
 
-                # 2. Image
-                elif uploaded_file is not None and uploaded_file.name.endswith(('.jpg', '.png', '.jpeg')):
-                    image = Image.open(uploaded_file)
-                    response = model.generate_content([user_input, image])
-                    response_text = response.text
-                
-                # 3. PDF
-                elif uploaded_file is not None and uploaded_file.name.endswith('.pdf'):
-                    pdf_reader = PyPDF2.PdfReader(uploaded_file)
-                    pdf_text = ""
-                    for page in pdf_reader.pages:
-                        pdf_text += page.extract_text()
-                    prompt = f"PDF: {pdf_text}\nQuestion: {user_input}"
-                    response = model.generate_content(prompt)
-                    response_text = response.text
-                
-                # 4. Normal
-                else:
+# Live preview above textbox
+if user_input:
+    typing_preview.markdown(f"<div style='background-color:#f0f0f0; padding:8px; border-radius:6px; margin-bottom:5px;'><b>Typing:</b> {user_input}</div>", unsafe_allow_html=True)
+else:
+    typing_preview.empty()
+
+# When user presses Enter / submits
+if st.button("Send"):
+    if user_input.strip():
+        # Add user message
+        with st.chat_message("user", avatar="👤"):
+            st.markdown(user_input)
+        st.session_state.messages.append({"role": "user", "content": user_input})
+
+        # Clear typing preview & text area
+        typing_preview.empty()
+        user_input = ""
+
+        # --- Assistant Response ---
+        try:
+            with st.chat_message("assistant", avatar="🤖"):
+                with st.spinner("વિચારી રહ્યો છું..."):
+                    # Existing response logic
                     current_time = get_current_time()
                     chat_history = []
                     for m in st.session_state.messages:
@@ -251,22 +188,22 @@ if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું મ�
                     response = model.generate_content(chat_history)
                     response_text = response.text
 
-                st.markdown(response_text)
-                
-                # Voice
-                try:
-                    clean_voice_text = clean_text_for_audio(response_text)
-                    if clean_voice_text:
-                        tts = gTTS(text=clean_voice_text, lang='gu') 
-                        audio_bytes = io.BytesIO()
-                        tts.write_to_fp(audio_bytes)
-                        audio_bytes.seek(0)
-                        st.audio(audio_bytes, format="audio/mp3")
-                        st.session_state.messages.append({"role": "assistant", "content": response_text, "audio_bytes": audio_bytes})
-                    else:
-                        st.session_state.messages.append({"role": "assistant", "content": response_text})
-                except:
-                    st.session_state.messages.append({"role": "assistant", "content": response_text})
+                    st.markdown(response_text)
 
-    except Exception as e:
-        st.error(f"Error: {e}")
+                    # Voice
+                    try:
+                        clean_voice_text = clean_text_for_audio(response_text)
+                        if clean_voice_text:
+                            tts = gTTS(text=clean_voice_text, lang='gu') 
+                            audio_bytes = io.BytesIO()
+                            tts.write_to_fp(audio_bytes)
+                            audio_bytes.seek(0)
+                            st.audio(audio_bytes, format="audio/mp3")
+                            st.session_state.messages.append({"role": "assistant", "content": response_text, "audio_bytes": audio_bytes})
+                        else:
+                            st.session_state.messages.append({"role": "assistant", "content": response_text})
+                    except:
+                        st.session_state.messages.append({"role": "assistant", "content": response_text})
+
+        except Exception as e:
+            st.error(f"Error: {e}")
