@@ -30,7 +30,7 @@ else:
     text_color = "#000000"
     title_color = "#00008B"
 
-# --- 3. CSS Styling ---
+# --- 3. CSS Styling (LIFT UP STRATEGY) ---
 st.markdown(f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap');
@@ -44,25 +44,29 @@ st.markdown(f"""
         color: {text_color} !important;
     }}
 
-    /* 🛑 1. MANAGE APP BUTTON REMOVER (આ કોડ તેને છુપાવશે) */
-    div[data-testid="stStatusWidget"], 
-    div[data-testid="stToolbar"], 
-    header, footer, #MainMenu, .stDeployButton {{
-        visibility: hidden !important;
-        display: none !important;
-    }}
-
-    /* 🛑 2. WHATSAPP STYLE INPUT (Bottom Fixed) */
+    /* 🛑 CHAT BOX LIFT (70px ઉપર) */
     .stChatInput {{
         position: fixed !important;
-        bottom: 0px !important;
-        left: 0px !important;
-        right: 0px !important;
-        padding-bottom: 15px !important;
+        bottom: 70px !important; /* અહીં બોક્સ ઉપર લીધું */
+        left: 0 !important;
+        right: 0 !important;
         padding-top: 15px !important;
+        padding-bottom: 15px !important;
         background-color: {main_bg} !important;
         z-index: 999999 !important;
         border-top: 1px solid {text_color};
+    }}
+    
+    /* લોગોને નીચે પડ્યો રહેવા દો (Hide if possible) */
+    div[data-testid="stStatusWidget"] {{
+        visibility: hidden !important;
+        z-index: 1 !important;
+    }}
+
+    /* મેસેજ લિસ્ટ માટે નીચે જગ્યા */
+    .block-container {{
+        padding-top: 2rem !important;
+        padding-bottom: 180px !important;
     }}
 
     /* Settings Menu */
@@ -75,17 +79,17 @@ st.markdown(f"""
         color: #000000 !important;
     }}
 
+    /* Hide Headers */
+    header, footer, #MainMenu, .stDeployButton {{
+        display: none !important;
+    }}
+
     h1 {{
         font-family: 'Orbitron', sans-serif !important;
         color: {title_color} !important;
         text-align: center;
         font-size: 3rem !important;
         margin-top: 10px;
-    }}
-
-    .block-container {{
-        padding-top: 2rem !important;
-        padding-bottom: 130px !important;
     }}
     </style>
     """, unsafe_allow_html=True)
@@ -162,14 +166,15 @@ def clean_text_for_audio(text):
 # --- 8. Chat Logic ---
 if "messages" not in st.session_state:
     st.session_state.messages = [
-        {"role": "assistant", "content": "જયશ્રી કૃષ્ણ! 🙏 હું DEV છું."}
+        {"role": "assistant", "content": "જયશ્રી કૃષ્ણ! 🙏 હું DEV છું. હું તમારી શું મદદ કરી શકું?"}
     ]
 
 for message in st.session_state.messages:
     avatar = "🤖" if message["role"] == "assistant" else "👤"
     with st.chat_message(message["role"], avatar=avatar):
         st.markdown(message["content"])
-        if "audio_bytes" in message: # ફિક્સ કરેલું નામ
+        # 🛑 AUDIO FIX: Bytes થી પ્લે કરો
+        if "audio_bytes" in message:
             st.audio(message["audio_bytes"], format="audio/mp3")
 
 # --- 9. Input Processing ---
@@ -218,16 +223,14 @@ if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું મ�
 
                 st.markdown(response_text)
                 
-                # Voice (Fixed with Bytes)
+                # 🛑 VOICE (Bytes Save)
                 try:
                     clean_voice_text = clean_text_for_audio(response_text)
                     if clean_voice_text:
                         tts = gTTS(text=clean_voice_text, lang='gu') 
                         
-                        # બફર બનાવો
                         audio_buffer = io.BytesIO()
                         tts.write_to_fp(audio_buffer)
-                        # બાઈટ્સ મેળવો (આ ક્યારેય ડિલીટ ન થાય)
                         audio_data = audio_buffer.getvalue()
                         
                         st.audio(audio_data, format="audio/mp3")
