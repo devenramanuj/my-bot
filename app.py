@@ -126,10 +126,11 @@ try:
     GOOGLE_API_KEY = st.secrets["GOOGLE_API_KEY"]
     genai.configure(api_key=GOOGLE_API_KEY)
     
-    # System Prompt (Context Memory Instruction)
+    # 🛑 SYSTEM PROMPT UPDATE (વિસ્તૃત જવાબ માટે)
     sys_prompt = """
     તારું નામ DEV (દેવ) છે. તું દેવેન્દ્રભાઈ રામાનુજ દ્વારા બનાવાયેલો પરિવારનો સભ્ય છે.
     તારે હંમેશા ગુજરાતીમાં જ વાત કરવાની છે.
+    તારે કોઈપણ પ્રશ્નનો જવાબ ટૂંકમાં નથી આપવાનો, પણ **વિસ્તૃત (Detailed)** અને **ઊંડાણપૂર્વક** સમજાવીને આપવાનો છે.
     તારે જૂની વાતચીત યાદ રાખવાની છે અને સંદર્ભ (Context) સમજીને જવાબ આપવાનો છે.
     """
     model = genai.GenerativeModel('gemini-2.0-flash', system_instruction=sys_prompt)
@@ -159,7 +160,7 @@ def clean_text_for_audio(text):
 # --- 8. Chat Logic ---
 if "messages" not in st.session_state:
     st.session_state.messages = [
-        {"role": "assistant", "content": "જયશ્રી કૃષ્ણ! 🙏 હું DEV છું."}
+        {"role": "assistant", "content": "જયશ્રી કૃષ્ણ! 🙏 હું DEV છું. મને ગમે તે પૂછો, હું તમને વિસ્તારથી સમજાવીશ."}
     ]
 
 for message in st.session_state.messages:
@@ -169,10 +170,9 @@ for message in st.session_state.messages:
         if "audio_bytes" in message:
             st.audio(message["audio_bytes"], format="audio/mp3")
 
-# --- 9. Input Processing (With Memory Fix) ---
+# --- 9. Input Processing ---
 if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું માઈક 🎙️ વાપરો)"):
     
-    # User Message Display
     with st.chat_message("user", avatar="👤"):
         st.markdown(user_input)
     st.session_state.messages.append({"role": "user", "content": user_input})
@@ -182,12 +182,12 @@ if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું મ�
             with st.spinner("વિચારી રહ્યો છું..."):
                 response_text = ""
                 
-                # 1. Internet (Fresh Context)
+                # 1. Internet
                 if web_search:
                     current_time = get_current_time()
                     st.toast(f"Searching Web... 🌍")
                     search_results = search_internet(user_input)
-                    prompt = f"Time: {current_time}\nInfo: {search_results}\nQuestion: {user_input}\nAnswer in Gujarati politely."
+                    prompt = f"Time: {current_time}\nInfo: {search_results}\nQuestion: {user_input}\nAnswer in Gujarati in detail."
                     response = model.generate_content(prompt)
                     response_text = response.text
 
@@ -203,32 +203,27 @@ if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું મ�
                     pdf_text = ""
                     for page in pdf_reader.pages:
                         pdf_text += page.extract_text()
-                    prompt = f"PDF Context: {pdf_text}\n\nQuestion: {user_input}"
+                    prompt = f"PDF Context: {pdf_text}\n\nQuestion: {user_input}\nAnswer in detail."
                     response = model.generate_content(prompt)
                     response_text = response.text
                 
-                # 4. Normal Chat (MEMORY FIX)
+                # 4. Normal Chat (Detailed)
                 else:
-                    # અહીં આપણે ચેટ હિસ્ટ્રીને યોગ્ય ફોર્મેટમાં ફેરવીએ છીએ
                     gemini_history = []
                     for m in st.session_state.messages:
-                        # ઓડિયો ડેટા કે સિસ્ટમ મેસેજ કાઢી નાખો, ફક્ત ટેક્સ્ટ રાખો
                         if m["role"] != "system" and "audio_bytes" not in m:
                             role = "model" if m["role"] == "assistant" else "user"
-                            # છેલ્લો યુઝર મેસેજ હજુ મોકલવાનો બાકી છે, એટલે તેને હિસ્ટ્રીમાં ન લો
                             if m["content"] != user_input: 
                                 gemini_history.append({"role": role, "parts": [m["content"]]})
                     
-                    # Chat Session શરૂ કરો (આનાથી મેમરી પાવરફુલ બને છે)
                     chat = model.start_chat(history=gemini_history)
-                    
-                    # નવો મેસેજ મોકલો
-                    response = chat.send_message(user_input)
+                    # અહીં સ્પષ્ટ કહ્યું છે કે વિસ્તારથી સમજાવજે
+                    response = chat.send_message(user_input + " (વિસ્તારથી સમજાવ)")
                     response_text = response.text
 
                 st.markdown(response_text)
                 
-                # Voice (Female)
+                # Voice
                 try:
                     clean_voice_text = clean_text_for_audio(response_text)
                     if clean_voice_text:
