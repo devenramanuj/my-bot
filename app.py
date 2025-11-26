@@ -30,7 +30,7 @@ else:
     text_color = "#000000"
     title_color = "#00008B"
 
-# --- 3. CSS Styling ---
+# --- 3. CSS Styling (Side Swap Fix) ---
 st.markdown(f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap');
@@ -44,11 +44,24 @@ st.markdown(f"""
         color: {text_color} !important;
     }}
 
-    /* LOGO REMOVER */
-    header, footer, #MainMenu, div[data-testid="stStatusWidget"], .stDeployButton {{
-        display: none !important;
-        visibility: hidden !important;
+    /* ----------------------------------------------------------- */
+    /* 🛑 LOGO MOVE (જમણી બાજુથી ડાબી બાજુ ખસેડ્યો)              */
+    /* ----------------------------------------------------------- */
+    div[data-testid="stStatusWidget"] {{
+        left: 10px !important;      /* ડાબી બાજુ રાખો */
+        right: auto !important;     /* જમણી બાજુથી હટાવો */
+        bottom: 15px !important;    /* નીચે રાખો */
+        position: fixed !important;
+        visibility: visible !important; /* ભલે દેખાય, પણ ખૂણામાં */
+        z-index: 999999 !important;
     }}
+    
+    /* Send Button (જમણી બાજુ જ રહેશે) */
+    .stChatInput button {{
+        z-index: 9999999 !important;
+    }}
+
+    /* ----------------------------------------------------------- */
 
     /* WHATSAPP KEYBOARD FIX */
     .stChatInput {{
@@ -59,8 +72,8 @@ st.markdown(f"""
         padding-bottom: 15px !important;
         padding-top: 15px !important;
         background-color: {main_bg} !important;
-        z-index: 999999 !important;
         border-top: 1px solid {text_color};
+        z-index: 999998 !important; /* લોગો કરતા ઓછું, પણ Send બટન કરતા વધુ */
     }}
 
     /* Settings Menu */
@@ -71,6 +84,11 @@ st.markdown(f"""
     }}
     .streamlit-expanderContent * {{
         color: #000000 !important;
+    }}
+
+    /* Hide Headers/Footers */
+    header, footer, #MainMenu, .stDeployButton {{
+        display: none !important;
     }}
 
     h1 {{
@@ -155,9 +173,7 @@ def clean_text_for_audio(text):
     clean = re.sub(r'[*#_`~]', '', text)
     return clean.strip()
 
-# 🛑 LANGUAGE DETECTOR (નવું ફંક્શન)
 def detect_language(text):
-    # જો ટેક્સ્ટમાં ગુજરાતી અક્ષરો હોય તો 'gu', નહિતર 'en'
     if re.search(r'[\u0A80-\u0AFF]', text):
         return 'gu'
     return 'en'
@@ -165,7 +181,7 @@ def detect_language(text):
 # --- 8. Chat Logic ---
 if "messages" not in st.session_state:
     st.session_state.messages = [
-        {"role": "assistant", "content": "જયશ્રી કૃષ્ણ! 🙏 હું DEV છું."}
+        {"role": "assistant", "content": "જયશ્રી કૃષ્ણ! 🙏 હું DEV છું. બોલો!"}
     ]
 
 for message in st.session_state.messages:
@@ -187,22 +203,18 @@ if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું મ�
             with st.spinner("Thinking..."):
                 response_text = ""
                 
-                # 1. Internet
+                # Logic
                 if web_search:
                     current_time = get_current_time()
                     st.toast(f"Searching Web... 🌍")
                     search_results = search_internet(user_input)
-                    prompt = f"Time: {current_time}\nInfo: {search_results}\nQuestion: {user_input}\nAnswer based on the language of the question (Gujarati or English)."
+                    prompt = f"Time: {current_time}\nInfo: {search_results}\nQuestion: {user_input}\nAnswer in user's language."
                     response = model.generate_content(prompt)
                     response_text = response.text
-
-                # 2. Image
                 elif uploaded_file is not None and uploaded_file.name.endswith(('.jpg', '.png', '.jpeg')):
                     image = Image.open(uploaded_file)
                     response = model.generate_content([user_input, image])
                     response_text = response.text
-                
-                # 3. PDF
                 elif uploaded_file is not None and uploaded_file.name.endswith('.pdf'):
                     pdf_reader = PyPDF2.PdfReader(uploaded_file)
                     pdf_text = ""
@@ -211,8 +223,6 @@ if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું મ�
                     prompt = f"PDF: {pdf_text}\nQuestion: {user_input}"
                     response = model.generate_content(prompt)
                     response_text = response.text
-                
-                # 4. Normal
                 else:
                     current_time = get_current_time()
                     chat_history = []
@@ -221,8 +231,7 @@ if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું મ�
                             role = "model" if m["role"] == "assistant" else "user"
                             chat_history.append({"role": role, "parts": [m["content"]]})
                     
-                    # અહી સૂચના આપી કે ભાષા મુજબ જવાબ આપે
-                    prompt_with_time = f"Time: {current_time}\nUser: {user_input}\nReply in the same language as the user (Gujarati or English)."
+                    prompt_with_time = f"Time: {current_time}\nUser: {user_input}\nReply in user's language (Gujarati/English)."
                     chat_history.append({"role": "user", "parts": [prompt_with_time]})
                     
                     response = model.generate_content(chat_history)
@@ -230,15 +239,11 @@ if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું મ�
 
                 st.markdown(response_text)
                 
-                # 🛑 SMART VOICE GENERATION
+                # Audio
                 try:
                     clean_voice_text = clean_text_for_audio(response_text)
-                    
                     if clean_voice_text:
-                        # ભાષા શોધો (Auto Detect)
                         lang_code = detect_language(clean_voice_text)
-                        
-                        # જે ભાષા હોય તેમાં બોલો
                         tts = gTTS(text=clean_voice_text, lang=lang_code) 
                         audio_bytes = io.BytesIO()
                         tts.write_to_fp(audio_bytes)
