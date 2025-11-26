@@ -30,7 +30,7 @@ else:
     text_color = "#000000"
     title_color = "#00008B"
 
-# --- 3. CSS Styling (THE LIFT UP FIX) ---
+# --- 3. CSS Styling ---
 st.markdown(f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap');
@@ -44,32 +44,28 @@ st.markdown(f"""
         color: {text_color} !important;
     }}
 
-    /* 🛑 CHAT INPUT LIFT (બોક્સને ઉપર લેવાનો કોડ) */
-    .stChatInput {{
-        position: fixed !important;
-        bottom: 60px !important; /* ⬆️ બોક્સને 60px ઉપર લીધું */
-        left: 0 !important;
-        right: 0 !important;
-        padding-top: 15px !important;
-        padding-bottom: 15px !important;
-        background-color: {main_bg} !important;
-        z-index: 999999 !important;
-        border-top: 1px solid {text_color};
-    }}
-    
-    /* મેસેજ લિસ્ટ માટે નીચે જગ્યા (જેથી છેલ્લો મેસેજ દેખાય) */
-    .block-container {{
-        padding-top: 2rem !important;
-        padding-bottom: 160px !important; /* જગ્યા વધારી દીધી */
-    }}
-
-    /* લોગોને છુપાવવાનો પ્રયત્ન (જો કામ કરે તો) */
-    header, footer, #MainMenu, div[data-testid="stStatusWidget"], .stDeployButton {{
+    /* 🛑 1. MANAGE APP BUTTON REMOVER (આ કોડ તેને છુપાવશે) */
+    div[data-testid="stStatusWidget"], 
+    div[data-testid="stToolbar"], 
+    header, footer, #MainMenu, .stDeployButton {{
         visibility: hidden !important;
         display: none !important;
     }}
 
-    /* Settings Menu Style */
+    /* 🛑 2. WHATSAPP STYLE INPUT (Bottom Fixed) */
+    .stChatInput {{
+        position: fixed !important;
+        bottom: 0px !important;
+        left: 0px !important;
+        right: 0px !important;
+        padding-bottom: 15px !important;
+        padding-top: 15px !important;
+        background-color: {main_bg} !important;
+        z-index: 999999 !important;
+        border-top: 1px solid {text_color};
+    }}
+
+    /* Settings Menu */
     .streamlit-expanderContent {{
         background-color: #FFFFFF !important;
         border: 1px solid #000000 !important;
@@ -85,6 +81,11 @@ st.markdown(f"""
         text-align: center;
         font-size: 3rem !important;
         margin-top: 10px;
+    }}
+
+    .block-container {{
+        padding-top: 2rem !important;
+        padding-bottom: 130px !important;
     }}
     </style>
     """, unsafe_allow_html=True)
@@ -130,7 +131,7 @@ try:
     
     sys_prompt = """
     તારું નામ DEV (દેવ) છે. 
-    તું દેવેન્દ્રભાઈ રામાનુજ દ્વારા બનાવાયેલો પરિવારનો સભ્ય છે.
+    તું દેવેન્દ્રભાઈ રામાનુજ દ્વારા બનાવાયેલો પરિવારનો એક સભ્ય છે.
     તારે હંમેશા ગુજરાતીમાં જ વાત કરવાની છે.
     તારે કોઈપણ પ્રશ્નનો જવાબ ટૂંકમાં નથી આપવાનો, પણ **વિસ્તૃત (Detailed)** સમજાવીને આપવાનો છે.
     """
@@ -161,14 +162,14 @@ def clean_text_for_audio(text):
 # --- 8. Chat Logic ---
 if "messages" not in st.session_state:
     st.session_state.messages = [
-        {"role": "assistant", "content": "જયશ્રી કૃષ્ણ! 🙏 હું DEV છું. બોલો!"}
+        {"role": "assistant", "content": "જયશ્રી કૃષ્ણ! 🙏 હું DEV છું."}
     ]
 
 for message in st.session_state.messages:
     avatar = "🤖" if message["role"] == "assistant" else "👤"
     with st.chat_message(message["role"], avatar=avatar):
         st.markdown(message["content"])
-        if "audio_bytes" in message:
+        if "audio_bytes" in message: # ફિક્સ કરેલું નામ
             st.audio(message["audio_bytes"], format="audio/mp3")
 
 # --- 9. Input Processing ---
@@ -183,7 +184,7 @@ if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું મ�
             with st.spinner("વિચારી રહ્યો છું..."):
                 response_text = ""
                 
-                # 1. Internet
+                # Logic
                 if web_search:
                     current_time = get_current_time()
                     st.toast(f"Searching Web... 🌍")
@@ -191,14 +192,10 @@ if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું મ�
                     prompt = f"Time: {current_time}\nInfo: {search_results}\nQuestion: {user_input}\nAnswer in Gujarati in detail."
                     response = model.generate_content(prompt)
                     response_text = response.text
-
-                # 2. Image
                 elif uploaded_file is not None and uploaded_file.name.endswith(('.jpg', '.png', '.jpeg')):
                     image = Image.open(uploaded_file)
                     response = model.generate_content([user_input, image])
                     response_text = response.text
-                
-                # 3. PDF
                 elif uploaded_file is not None and uploaded_file.name.endswith('.pdf'):
                     pdf_reader = PyPDF2.PdfReader(uploaded_file)
                     pdf_text = ""
@@ -207,32 +204,34 @@ if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું મ�
                     prompt = f"PDF Context: {pdf_text}\n\nQuestion: {user_input}\nAnswer in detail."
                     response = model.generate_content(prompt)
                     response_text = response.text
-                
-                # 4. Normal Chat
                 else:
-                    gemini_history = []
+                    chat_history = []
                     for m in st.session_state.messages:
                         if m["role"] != "system" and "audio_bytes" not in m:
                             role = "model" if m["role"] == "assistant" else "user"
                             if m["content"] != user_input: 
-                                gemini_history.append({"role": role, "parts": [m["content"]]})
+                                chat_history.append({"role": role, "parts": [m["content"]]})
                     
-                    chat = model.start_chat(history=gemini_history)
+                    chat = model.start_chat(history=chat_history)
                     response = chat.send_message(user_input + " (વિસ્તારથી સમજાવ)")
                     response_text = response.text
 
                 st.markdown(response_text)
                 
-                # Voice
+                # Voice (Fixed with Bytes)
                 try:
                     clean_voice_text = clean_text_for_audio(response_text)
                     if clean_voice_text:
                         tts = gTTS(text=clean_voice_text, lang='gu') 
-                        audio_bytes = io.BytesIO()
-                        tts.write_to_fp(audio_bytes)
-                        audio_bytes.seek(0)
-                        st.audio(audio_bytes, format="audio/mp3")
-                        st.session_state.messages.append({"role": "assistant", "content": response_text, "audio_bytes": audio_bytes})
+                        
+                        # બફર બનાવો
+                        audio_buffer = io.BytesIO()
+                        tts.write_to_fp(audio_buffer)
+                        # બાઈટ્સ મેળવો (આ ક્યારેય ડિલીટ ન થાય)
+                        audio_data = audio_buffer.getvalue()
+                        
+                        st.audio(audio_data, format="audio/mp3")
+                        st.session_state.messages.append({"role": "assistant", "content": response_text, "audio_bytes": audio_data})
                     else:
                         st.session_state.messages.append({"role": "assistant", "content": response_text})
                 except:
