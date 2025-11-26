@@ -28,109 +28,105 @@ else:
     text_color = "#000000"
     title_color = "#00008B"
 
-# --- 3. CSS (Final Working Logo Hider) ---
+# --- 3. CSS Styling (The Ultimate Fix) ---
 st.markdown(f"""
-<style>
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap');
 
-.stApp {{
-    background-color: {main_bg} !important;
-    color: {text_color} !important;
-}}
+    .stApp {{
+        background-color: {main_bg} !important;
+        color: {text_color} !important;
+    }}
+    
+    p, div, span, li, label, h1, h2, h3, h4, h5, h6, .stMarkdown {{
+        color: {text_color} !important;
+    }}
 
-p, div, span, li, label, h1, h2, h3, h4, h5, h6, .stMarkdown {{
-    color: {text_color} !important;
-}}
+    /* ============================================================ */
+    /* 🛑 1. LOGO KILLER (લોગોને જડમૂળથી હટાવવા)                  */
+    /* ============================================================ */
+    
+    /* Manage App Button, Decoration, Toolbar, Footer - બધું ગાયબ */
+    div[data-testid="stStatusWidget"],
+    div[data-testid="stToolbar"],
+    div[data-testid="stDecoration"],
+    header,
+    footer,
+    #MainMenu {{
+        visibility: hidden !important;
+        display: none !important;
+        height: 0px !important;
+        width: 0px !important;
+        opacity: 0 !important;
+        pointer-events: none !important; /* ક્લિક બ્લોક કરો */
+        z-index: -1 !important; /* છેક પાછળ ધકેલો */
+    }}
 
-/* ====================================================== */
-/* 100% LOGO & MENU REMOVAL (WORKING IN 2025)             */
-/* ====================================================== */
+    /* ============================================================ */
+    /* 🛑 2. CHAT BOX & SEND BUTTON (સૌથી ઉપર)                    */
+    /* ============================================================ */
+    
+    /* ચેટ બોક્સ કન્ટેનર */
+    [data-testid="stBottom"] {{
+        background-color: {main_bg} !important;
+        z-index: 999999 !important; /* સૌથી ઉપર */
+        padding-bottom: 15px !important;
+        padding-top: 15px !important;
+    }}
 
-/* Top-right deploy/share button */
-button[kind="header"] {{
-    display: none !important;
-}}
+    /* ઇનપુટ બોક્સ */
+    .stChatInput {{
+        border-top: 1px solid {text_color};
+        background-color: transparent !important;
+        z-index: 9999999 !important;
+    }}
+    
+    /* Send બટન */
+    button[data-testid="stChatInputSubmitButton"] {{
+        z-index: 10000000 !important; /* લોગો કરતા 1 કરોડ ગણું ઉપર! */
+        background-color: transparent !important;
+        border: none !important;
+    }}
 
-/* Toolbar */
-div[data-testid="stToolbar"] {{
-    display: none !important;
-}}
+    /* ============================================================ */
 
-/* Main menu */
-#MainMenu {{
-    visibility: hidden !important;
-    display: none !important;
-}}
+    /* Settings Menu */
+    .streamlit-expanderContent {{
+        background-color: #FFFFFF !important;
+        border: 1px solid #000000 !important;
+        border-radius: 10px;
+    }}
+    .streamlit-expanderContent * {{
+        color: #000000 !important;
+    }}
 
-/* Footer (Made with Streamlit) */
-footer {{
-    visibility: hidden !important;
-    display: none !important;
-}}
+    /* Title */
+    h1 {{
+        font-family: 'Orbitron', sans-serif !important;
+        color: {title_color} !important;
+        text-align: center;
+        font-size: 3rem !important;
+        margin-top: 10px;
+    }}
 
-/* GitHub floating logo */
-a[href*="github.com"] svg {{
-    display: none !important;
-}}
-
-/* Streamlit watermark */
-img[alt="Streamlit"] {{
-    display: none !important;
-}}
-
-a[href*="streamlit.io"] {{
-    display: none !important;
-}}
-
-div[data-testid="stStatusWidget"] {{
-    display: none !important;
-}}
-
-/* --- CHAT UI --- */
-[data-testid="stBottom"] {{
-    background-color: {main_bg} !important;
-    z-index: 999999 !important;
-    padding-bottom: 15px !important;
-    padding-top: 15px !important;
-}}
-
-.stChatInput {{
-    border-top: 1px solid {text_color};
-    background-color: transparent !important;
-    z-index: 9999999 !important;
-}}
-
-button[data-testid="stChatInputSubmitButton"] {{
-    z-index: 10000000 !important;
-    background-color: transparent !important;
-    border: none !important;
-}}
-
-h1 {{
-    font-family: 'Orbitron', sans-serif !important;
-    color: {title_color} !important;
-    text-align: center;
-    font-size: 3rem !important;
-    margin-top: 10px;
-}}
-
-.block-container {{
-    padding-top: 2rem !important;
-    padding-bottom: 140px !important;
-}}
-
-</style>
-""", unsafe_allow_html=True)
+    /* મેસેજ દબાઈ ન જાય તે માટે જગ્યા */
+    .block-container {{
+        padding-top: 2rem !important;
+        padding-bottom: 140px !important;
+    }}
+    </style>
+    """, unsafe_allow_html=True)
 
 # --- 4. Layout ---
 st.markdown(f"""
-<h1 style='display: flex; align-items: center; justify-content: center; gap: 15px;'>
-    <img src="https://cdn-icons-png.flaticon.com/512/2040/2040946.png" width="50" height="50">
-    DEV
-</h1>
-<div style='text-align: center; color: {text_color}; font-size: 13px; margin-bottom: 10px; opacity: 0.9;'>
-    Developed by <b>Devendra Ramanuj</b> | 📱 9276505035
-</div>
-""", unsafe_allow_html=True)
+    <h1 style='display: flex; align-items: center; justify-content: center; gap: 15px;'>
+        <img src="https://cdn-icons-png.flaticon.com/512/2040/2040946.png" width="50" height="50" style="vertical-align: middle;">
+        DEV
+    </h1>
+    <div style='text-align: center; color: {text_color}; font-size: 13px; margin-bottom: 10px; opacity: 0.9;'>
+        Developed by <b>Devendra Ramanuj</b> | 📱 9276505035
+    </div>
+    """, unsafe_allow_html=True)
 
 st.write("---")
 
@@ -205,7 +201,7 @@ for message in st.session_state.messages:
 
 # --- 9. Input Processing ---
 if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું માઈક 🎙️ વાપરો)"):
-
+    
     with st.chat_message("user", avatar="👤"):
         st.markdown(user_input)
     st.session_state.messages.append({"role": "user", "content": user_input})
@@ -218,7 +214,7 @@ if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું મ�
                 # 1. Internet
                 if web_search:
                     current_time = get_current_time()
-                    st.toast("Searching Web... 🌍")
+                    st.toast(f"Searching Web... 🌍")
                     search_results = search_internet(user_input)
                     prompt = f"Time: {current_time}\nInfo: {search_results}\nQuestion: {user_input}\nAnswer in Gujarati."
                     response = model.generate_content(prompt)
@@ -229,7 +225,7 @@ if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું મ�
                     image = Image.open(uploaded_file)
                     response = model.generate_content([user_input, image])
                     response_text = response.text
-
+                
                 # 3. PDF
                 elif uploaded_file is not None and uploaded_file.name.endswith('.pdf'):
                     pdf_reader = PyPDF2.PdfReader(uploaded_file)
@@ -248,7 +244,7 @@ if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું મ�
                         if m["role"] != "system" and "audio_bytes" not in m:
                             role = "model" if m["role"] == "assistant" else "user"
                             chat_history.append({"role": role, "parts": [m["content"]]})
-
+                    
                     prompt_with_time = f"Time: {current_time}\nUser: {user_input}\nReply in Gujarati."
                     chat_history.append({"role": "user", "parts": [prompt_with_time]})
                     
@@ -256,12 +252,12 @@ if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું મ�
                     response_text = response.text
 
                 st.markdown(response_text)
-
+                
                 # Voice
                 try:
                     clean_voice_text = clean_text_for_audio(response_text)
                     if clean_voice_text:
-                        tts = gTTS(text=clean_voice_text, lang='gu')
+                        tts = gTTS(text=clean_voice_text, lang='gu') 
                         audio_bytes = io.BytesIO()
                         tts.write_to_fp(audio_bytes)
                         audio_bytes.seek(0)
