@@ -30,7 +30,7 @@ else:
     text_color = "#000000"
     title_color = "#00008B"
 
-# --- 3. CSS Styling ---
+# --- 3. CSS Styling (Nuclear Logo Removal) ---
 st.markdown(f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap');
@@ -44,13 +44,22 @@ st.markdown(f"""
         color: {text_color} !important;
     }}
 
-    /* Hide Logos */
-    header, footer, #MainMenu, div[data-testid="stStatusWidget"], .stDeployButton {{
-        display: none !important;
+    /* 🛑 ULTIMATE LOGO KILLER (આ કોડ લોગોને ગાયબ કરશે) */
+    div[data-testid="stStatusWidget"],
+    div[data-testid="stToolbar"],
+    header, footer, #MainMenu, .stDeployButton {{
         visibility: hidden !important;
+        display: none !important;
+        opacity: 0 !important;
+        height: 0px !important;
+        width: 0px !important;
+        position: absolute !important;
+        top: -9999px !important; /* સ્ક્રીનની બહાર ફેંકી દીધું */
+        left: -9999px !important;
+        pointer-events: none !important;
     }}
 
-    /* WhatsApp Style Input */
+    /* 🛑 WHATSAPP KEYBOARD FIX */
     .stChatInput {{
         position: fixed !important;
         bottom: 0px !important;
@@ -126,12 +135,12 @@ try:
     GOOGLE_API_KEY = st.secrets["GOOGLE_API_KEY"]
     genai.configure(api_key=GOOGLE_API_KEY)
     
-    # 🛑 SYSTEM PROMPT UPDATE (વિસ્તૃત જવાબ માટે)
+    # 🛑 SYSTEM PROMPT (Detailed Answer Instruction)
     sys_prompt = """
     તારું નામ DEV (દેવ) છે. તું દેવેન્દ્રભાઈ રામાનુજ દ્વારા બનાવાયેલો પરિવારનો સભ્ય છે.
     તારે હંમેશા ગુજરાતીમાં જ વાત કરવાની છે.
     તારે કોઈપણ પ્રશ્નનો જવાબ ટૂંકમાં નથી આપવાનો, પણ **વિસ્તૃત (Detailed)** અને **ઊંડાણપૂર્વક** સમજાવીને આપવાનો છે.
-    તારે જૂની વાતચીત યાદ રાખવાની છે અને સંદર્ભ (Context) સમજીને જવાબ આપવાનો છે.
+    તારે જૂની વાતચીત યાદ રાખવાની છે.
     """
     model = genai.GenerativeModel('gemini-2.0-flash', system_instruction=sys_prompt)
 except:
@@ -160,7 +169,7 @@ def clean_text_for_audio(text):
 # --- 8. Chat Logic ---
 if "messages" not in st.session_state:
     st.session_state.messages = [
-        {"role": "assistant", "content": "જયશ્રી કૃષ્ણ! 🙏 હું DEV છું. મને ગમે તે પૂછો, હું તમને વિસ્તારથી સમજાવીશ."}
+        {"role": "assistant", "content": "જયશ્રી કૃષ્ણ! 🙏 હું DEV છું. બોલો!"}
     ]
 
 for message in st.session_state.messages:
@@ -207,7 +216,7 @@ if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું મ�
                     response = model.generate_content(prompt)
                     response_text = response.text
                 
-                # 4. Normal Chat (Detailed)
+                # 4. Normal Chat
                 else:
                     gemini_history = []
                     for m in st.session_state.messages:
@@ -217,7 +226,6 @@ if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું મ�
                                 gemini_history.append({"role": role, "parts": [m["content"]]})
                     
                     chat = model.start_chat(history=gemini_history)
-                    # અહીં સ્પષ્ટ કહ્યું છે કે વિસ્તારથી સમજાવજે
                     response = chat.send_message(user_input + " (વિસ્તારથી સમજાવ)")
                     response_text = response.text
 
