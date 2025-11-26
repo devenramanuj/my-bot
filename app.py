@@ -30,7 +30,7 @@ else:
     text_color = "#000000"
     title_color = "#00008B"
 
-# --- 3. CSS Styling (LIFT STRATEGY) ---
+# --- 3. CSS Styling ---
 st.markdown(f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap');
@@ -44,36 +44,23 @@ st.markdown(f"""
         color: {text_color} !important;
     }}
 
-    /* 🛑 CHAT BOX LIFT (ચેટ બોક્સને ઉપર લેવા માટે) */
+    /* Hide Logos */
+    header, footer, #MainMenu, div[data-testid="stStatusWidget"], .stDeployButton {{
+        display: none !important;
+        visibility: hidden !important;
+    }}
+
+    /* WhatsApp Style Input */
     .stChatInput {{
         position: fixed !important;
-        bottom: 60px !important; /* 🛑 બોક્સને 60px ઉપર ઉઠાવ્યું */
-        left: 0 !important;
-        right: 0 !important;
-        padding-top: 10px !important;
-        padding-bottom: 10px !important;
+        bottom: 0px !important;
+        left: 0px !important;
+        right: 0px !important;
+        padding-bottom: 15px !important;
+        padding-top: 15px !important;
         background-color: {main_bg} !important;
         z-index: 999999 !important;
         border-top: 1px solid {text_color};
-    }}
-    
-    /* Send Button Adjustment */
-    .stChatInput button {{
-        background-color: transparent !important;
-        border: none !important;
-    }}
-
-    /* LOGO (નીચે પડ્યો રહેશે) */
-    div[data-testid="stStatusWidget"] {{
-        visibility: hidden !important; /* બને તો છુપાવો */
-        bottom: 5px !important;
-        right: 5px !important;
-        z-index: 1 !important; /* સૌથી નીચે */
-    }}
-
-    /* Header & Footer Hide */
-    header, footer, #MainMenu, .stDeployButton {{
-        display: none !important;
     }}
 
     /* Settings Menu */
@@ -94,10 +81,9 @@ st.markdown(f"""
         margin-top: 10px;
     }}
 
-    /* Content Padding (નીચે જગ્યા છોડવી પડશે) */
     .block-container {{
         padding-top: 2rem !important;
-        padding-bottom: 150px !important; /* ચેટ બોક્સ ઉપર આવ્યું એટલે જગ્યા વધારી */
+        padding-bottom: 130px !important;
     }}
     </style>
     """, unsafe_allow_html=True)
@@ -131,7 +117,6 @@ with st.expander("⚙️"):
     st.write("###### 📂 Files")
     uploaded_file = st.file_uploader("Upload", type=["jpg", "pdf"])
     
-    st.divider()
     if st.button("🗑️ Reset Chat"):
         st.session_state.messages = []
         st.rerun()
@@ -141,10 +126,11 @@ try:
     GOOGLE_API_KEY = st.secrets["GOOGLE_API_KEY"]
     genai.configure(api_key=GOOGLE_API_KEY)
     
+    # System Prompt (Context Memory Instruction)
     sys_prompt = """
-    તારું નામ DEV (દેવ) છે. 
-    તું દેવેન્દ્રભાઈ રામાનુજ દ્વારા બનાવાયેલો પરિવારનો એક સભ્ય છે.
+    તારું નામ DEV (દેવ) છે. તું દેવેન્દ્રભાઈ રામાનુજ દ્વારા બનાવાયેલો પરિવારનો સભ્ય છે.
     તારે હંમેશા ગુજરાતીમાં જ વાત કરવાની છે.
+    તારે જૂની વાતચીત યાદ રાખવાની છે અને સંદર્ભ (Context) સમજીને જવાબ આપવાનો છે.
     """
     model = genai.GenerativeModel('gemini-2.0-flash', system_instruction=sys_prompt)
 except:
@@ -170,11 +156,6 @@ def clean_text_for_audio(text):
     clean = re.sub(r'[*#_`~]', '', text)
     return clean.strip()
 
-def detect_language(text):
-    if re.search(r'[\u0A80-\u0AFF]', text):
-        return 'gu'
-    return 'en'
-
 # --- 8. Chat Logic ---
 if "messages" not in st.session_state:
     st.session_state.messages = [
@@ -188,58 +169,70 @@ for message in st.session_state.messages:
         if "audio_bytes" in message:
             st.audio(message["audio_bytes"], format="audio/mp3")
 
-# --- 9. Input Processing ---
+# --- 9. Input Processing (With Memory Fix) ---
 if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું માઈક 🎙️ વાપરો)"):
     
+    # User Message Display
     with st.chat_message("user", avatar="👤"):
         st.markdown(user_input)
     st.session_state.messages.append({"role": "user", "content": user_input})
 
     try:
         with st.chat_message("assistant", avatar="🤖"):
-            with st.spinner("Thinking..."):
+            with st.spinner("વિચારી રહ્યો છું..."):
                 response_text = ""
                 
-                # Logic (Internet/Image/Text)
+                # 1. Internet (Fresh Context)
                 if web_search:
                     current_time = get_current_time()
                     st.toast(f"Searching Web... 🌍")
                     search_results = search_internet(user_input)
-                    prompt = f"Time: {current_time}\nInfo: {search_results}\nQuestion: {user_input}\nAnswer in Gujarati."
+                    prompt = f"Time: {current_time}\nInfo: {search_results}\nQuestion: {user_input}\nAnswer in Gujarati politely."
                     response = model.generate_content(prompt)
                     response_text = response.text
+
+                # 2. Image
                 elif uploaded_file is not None and uploaded_file.name.endswith(('.jpg', '.png', '.jpeg')):
                     image = Image.open(uploaded_file)
                     response = model.generate_content([user_input, image])
                     response_text = response.text
+                
+                # 3. PDF
                 elif uploaded_file is not None and uploaded_file.name.endswith('.pdf'):
                     pdf_reader = PyPDF2.PdfReader(uploaded_file)
                     pdf_text = ""
                     for page in pdf_reader.pages:
                         pdf_text += page.extract_text()
-                    prompt = f"PDF: {pdf_text}\nQuestion: {user_input}"
+                    prompt = f"PDF Context: {pdf_text}\n\nQuestion: {user_input}"
                     response = model.generate_content(prompt)
                     response_text = response.text
+                
+                # 4. Normal Chat (MEMORY FIX)
                 else:
-                    current_time = get_current_time()
-                    chat_history = []
+                    # અહીં આપણે ચેટ હિસ્ટ્રીને યોગ્ય ફોર્મેટમાં ફેરવીએ છીએ
+                    gemini_history = []
                     for m in st.session_state.messages:
+                        # ઓડિયો ડેટા કે સિસ્ટમ મેસેજ કાઢી નાખો, ફક્ત ટેક્સ્ટ રાખો
                         if m["role"] != "system" and "audio_bytes" not in m:
                             role = "model" if m["role"] == "assistant" else "user"
-                            chat_history.append({"role": role, "parts": [m["content"]]})
-                    prompt_with_time = f"Time: {current_time}\nUser: {user_input}\nReply in user's language (Gujarati/English)."
-                    chat_history.append({"role": "user", "parts": [prompt_with_time]})
-                    response = model.generate_content(chat_history)
+                            # છેલ્લો યુઝર મેસેજ હજુ મોકલવાનો બાકી છે, એટલે તેને હિસ્ટ્રીમાં ન લો
+                            if m["content"] != user_input: 
+                                gemini_history.append({"role": role, "parts": [m["content"]]})
+                    
+                    # Chat Session શરૂ કરો (આનાથી મેમરી પાવરફુલ બને છે)
+                    chat = model.start_chat(history=gemini_history)
+                    
+                    # નવો મેસેજ મોકલો
+                    response = chat.send_message(user_input)
                     response_text = response.text
 
                 st.markdown(response_text)
                 
-                # Audio
+                # Voice (Female)
                 try:
                     clean_voice_text = clean_text_for_audio(response_text)
                     if clean_voice_text:
-                        lang_code = detect_language(clean_voice_text)
-                        tts = gTTS(text=clean_voice_text, lang=lang_code) 
+                        tts = gTTS(text=clean_voice_text, lang='gu') 
                         audio_bytes = io.BytesIO()
                         tts.write_to_fp(audio_bytes)
                         audio_bytes.seek(0)
