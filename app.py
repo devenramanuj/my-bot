@@ -30,7 +30,7 @@ else:
     text_color = "#000000"
     title_color = "#00008B"
 
-# --- 3. CSS Styling (LIFT STRATEGY) ---
+# --- 3. CSS Styling (WhatsApp Logic) ---
 st.markdown(f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap');
@@ -44,33 +44,27 @@ st.markdown(f"""
         color: {text_color} !important;
     }}
 
-    /* 🛑 CHAT BOX LIFT (ચેટ બોક્સને ઉપર લેવા માટે) */
+    /* 🛑 1. WHATSAPP KEYBOARD FIX */
     .stChatInput {{
         position: fixed !important;
-        bottom: 60px !important; /* 🛑 બોક્સને 60px ઉપર ઉઠાવ્યું */
-        left: 0 !important;
-        right: 0 !important;
+        bottom: 0px !important; /* તળિયે ચોંટાડી દીધું */
+        left: 0px !important;
+        right: 0px !important;
+        padding-bottom: 20px !important; /* નીચે થોડી જગ્યા */
         padding-top: 10px !important;
-        padding-bottom: 10px !important;
-        background-color: {main_bg} !important;
-        z-index: 999999 !important;
+        background-color: {main_bg} !important; /* પાછળનો કલર સોલિડ */
+        z-index: 99999 !important; /* સૌથી ઉપર */
         border-top: 1px solid {text_color};
     }}
     
-    /* Send Button Adjustment */
-    .stChatInput button {{
-        background-color: transparent !important;
-        border: none !important;
-    }}
-
-    /* LOGO (નીચે પડ્યો રહેશે) */
+    /* 🛑 2. LOGO THROW (લોગોને સ્ક્રીનની બહાર ફેંકી દીધો) */
     div[data-testid="stStatusWidget"] {{
-        visibility: hidden !important; /* બને તો છુપાવો */
-        bottom: 5px !important;
-        right: 5px !important;
-        z-index: 1 !important; /* સૌથી નીચે */
+        position: fixed !important;
+        left: -5000px !important; /* સ્ક્રીનની ડાબી બાજુ બહુ દૂર */
+        visibility: hidden !important;
+        pointer-events: none !important;
     }}
-
+    
     /* Header & Footer Hide */
     header, footer, #MainMenu, .stDeployButton {{
         display: none !important;
@@ -86,6 +80,7 @@ st.markdown(f"""
         color: #000000 !important;
     }}
 
+    /* Title Font */
     h1 {{
         font-family: 'Orbitron', sans-serif !important;
         color: {title_color} !important;
@@ -94,10 +89,10 @@ st.markdown(f"""
         margin-top: 10px;
     }}
 
-    /* Content Padding (નીચે જગ્યા છોડવી પડશે) */
+    /* નીચે ચેટ દબાઈ ન જાય તે માટે જગ્યા */
     .block-container {{
         padding-top: 2rem !important;
-        padding-bottom: 150px !important; /* ચેટ બોક્સ ઉપર આવ્યું એટલે જગ્યા વધારી */
+        padding-bottom: 120px !important;
     }}
     </style>
     """, unsafe_allow_html=True)
@@ -145,6 +140,7 @@ try:
     તારું નામ DEV (દેવ) છે. 
     તું દેવેન્દ્રભાઈ રામાનુજ દ્વારા બનાવાયેલો પરિવારનો એક સભ્ય છે.
     તારે હંમેશા ગુજરાતીમાં જ વાત કરવાની છે.
+    તારે દેવેન્દ્રભાઈનો આભારી છે.
     """
     model = genai.GenerativeModel('gemini-2.0-flash', system_instruction=sys_prompt)
 except:
@@ -170,15 +166,10 @@ def clean_text_for_audio(text):
     clean = re.sub(r'[*#_`~]', '', text)
     return clean.strip()
 
-def detect_language(text):
-    if re.search(r'[\u0A80-\u0AFF]', text):
-        return 'gu'
-    return 'en'
-
 # --- 8. Chat Logic ---
 if "messages" not in st.session_state:
     st.session_state.messages = [
-        {"role": "assistant", "content": "જયશ્રી કૃષ્ણ! 🙏 હું DEV છું."}
+        {"role": "assistant", "content": "જયશ્રી કૃષ્ણ! 🙏 હું DEV છું, આપના પરિવારનો સભ્ય."}
     ]
 
 for message in st.session_state.messages:
@@ -197,21 +188,25 @@ if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું મ�
 
     try:
         with st.chat_message("assistant", avatar="🤖"):
-            with st.spinner("Thinking..."):
+            with st.spinner("વિચારી રહ્યો છું..."):
                 response_text = ""
                 
-                # Logic (Internet/Image/Text)
+                # 1. Internet
                 if web_search:
                     current_time = get_current_time()
                     st.toast(f"Searching Web... 🌍")
                     search_results = search_internet(user_input)
-                    prompt = f"Time: {current_time}\nInfo: {search_results}\nQuestion: {user_input}\nAnswer in Gujarati."
+                    prompt = f"Time: {current_time}\nInfo: {search_results}\nQuestion: {user_input}\nAnswer in Gujarati politely with light humor."
                     response = model.generate_content(prompt)
                     response_text = response.text
+
+                # 2. Image
                 elif uploaded_file is not None and uploaded_file.name.endswith(('.jpg', '.png', '.jpeg')):
                     image = Image.open(uploaded_file)
                     response = model.generate_content([user_input, image])
                     response_text = response.text
+                
+                # 3. PDF
                 elif uploaded_file is not None and uploaded_file.name.endswith('.pdf'):
                     pdf_reader = PyPDF2.PdfReader(uploaded_file)
                     pdf_text = ""
@@ -220,6 +215,8 @@ if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું મ�
                     prompt = f"PDF: {pdf_text}\nQuestion: {user_input}"
                     response = model.generate_content(prompt)
                     response_text = response.text
+                
+                # 4. Normal
                 else:
                     current_time = get_current_time()
                     chat_history = []
@@ -227,19 +224,20 @@ if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું મ�
                         if m["role"] != "system" and "audio_bytes" not in m:
                             role = "model" if m["role"] == "assistant" else "user"
                             chat_history.append({"role": role, "parts": [m["content"]]})
-                    prompt_with_time = f"Time: {current_time}\nUser: {user_input}\nReply in user's language (Gujarati/English)."
+                    
+                    prompt_with_time = f"Current Time: {current_time}\nUser: {user_input}\nReply in Gujarati. Be helpful, polite and act like a family member."
                     chat_history.append({"role": "user", "parts": [prompt_with_time]})
+                    
                     response = model.generate_content(chat_history)
                     response_text = response.text
 
                 st.markdown(response_text)
                 
-                # Audio
+                # Voice (Female)
                 try:
                     clean_voice_text = clean_text_for_audio(response_text)
                     if clean_voice_text:
-                        lang_code = detect_language(clean_voice_text)
-                        tts = gTTS(text=clean_voice_text, lang=lang_code) 
+                        tts = gTTS(text=clean_voice_text, lang='gu') 
                         audio_bytes = io.BytesIO()
                         tts.write_to_fp(audio_bytes)
                         audio_bytes.seek(0)
