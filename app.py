@@ -30,7 +30,7 @@ else:
     text_color = "#000000"
     title_color = "#00008B"
 
-# --- 3. CSS Styling (Side Swap Fix) ---
+# --- 3. CSS Styling (LIFT STRATEGY) ---
 st.markdown(f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap');
@@ -44,36 +44,36 @@ st.markdown(f"""
         color: {text_color} !important;
     }}
 
-    /* ----------------------------------------------------------- */
-    /* 🛑 LOGO MOVE (જમણી બાજુથી ડાબી બાજુ ખસેડ્યો)              */
-    /* ----------------------------------------------------------- */
-    div[data-testid="stStatusWidget"] {{
-        left: 10px !important;      /* ડાબી બાજુ રાખો */
-        right: auto !important;     /* જમણી બાજુથી હટાવો */
-        bottom: 15px !important;    /* નીચે રાખો */
-        position: fixed !important;
-        visibility: visible !important; /* ભલે દેખાય, પણ ખૂણામાં */
-        z-index: 999999 !important;
-    }}
-    
-    /* Send Button (જમણી બાજુ જ રહેશે) */
-    .stChatInput button {{
-        z-index: 9999999 !important;
-    }}
-
-    /* ----------------------------------------------------------- */
-
-    /* WHATSAPP KEYBOARD FIX */
+    /* 🛑 CHAT BOX LIFT (ચેટ બોક્સને ઉપર લેવા માટે) */
     .stChatInput {{
         position: fixed !important;
-        bottom: 0 !important;
+        bottom: 60px !important; /* 🛑 બોક્સને 60px ઉપર ઉઠાવ્યું */
         left: 0 !important;
         right: 0 !important;
-        padding-bottom: 15px !important;
-        padding-top: 15px !important;
+        padding-top: 10px !important;
+        padding-bottom: 10px !important;
         background-color: {main_bg} !important;
+        z-index: 999999 !important;
         border-top: 1px solid {text_color};
-        z-index: 999998 !important; /* લોગો કરતા ઓછું, પણ Send બટન કરતા વધુ */
+    }}
+    
+    /* Send Button Adjustment */
+    .stChatInput button {{
+        background-color: transparent !important;
+        border: none !important;
+    }}
+
+    /* LOGO (નીચે પડ્યો રહેશે) */
+    div[data-testid="stStatusWidget"] {{
+        visibility: hidden !important; /* બને તો છુપાવો */
+        bottom: 5px !important;
+        right: 5px !important;
+        z-index: 1 !important; /* સૌથી નીચે */
+    }}
+
+    /* Header & Footer Hide */
+    header, footer, #MainMenu, .stDeployButton {{
+        display: none !important;
     }}
 
     /* Settings Menu */
@@ -86,11 +86,6 @@ st.markdown(f"""
         color: #000000 !important;
     }}
 
-    /* Hide Headers/Footers */
-    header, footer, #MainMenu, .stDeployButton {{
-        display: none !important;
-    }}
-
     h1 {{
         font-family: 'Orbitron', sans-serif !important;
         color: {title_color} !important;
@@ -99,9 +94,10 @@ st.markdown(f"""
         margin-top: 10px;
     }}
 
+    /* Content Padding (નીચે જગ્યા છોડવી પડશે) */
     .block-container {{
         padding-top: 2rem !important;
-        padding-bottom: 130px !important;
+        padding-bottom: 150px !important; /* ચેટ બોક્સ ઉપર આવ્યું એટલે જગ્યા વધારી */
     }}
     </style>
     """, unsafe_allow_html=True)
@@ -135,6 +131,7 @@ with st.expander("⚙️"):
     st.write("###### 📂 Files")
     uploaded_file = st.file_uploader("Upload", type=["jpg", "pdf"])
     
+    st.divider()
     if st.button("🗑️ Reset Chat"):
         st.session_state.messages = []
         st.rerun()
@@ -146,8 +143,8 @@ try:
     
     sys_prompt = """
     તારું નામ DEV (દેવ) છે. 
-    તું દેવેન્દ્રભાઈ રામાનુજ દ્વારા બનાવાયેલો પરિવારનો સભ્ય છે.
-    સામાન્ય રીતે ગુજરાતીમાં વાત કરજે, પણ જો યુઝર English માં પૂછે તો English માં જવાબ આપજે.
+    તું દેવેન્દ્રભાઈ રામાનુજ દ્વારા બનાવાયેલો પરિવારનો એક સભ્ય છે.
+    તારે હંમેશા ગુજરાતીમાં જ વાત કરવાની છે.
     """
     model = genai.GenerativeModel('gemini-2.0-flash', system_instruction=sys_prompt)
 except:
@@ -181,7 +178,7 @@ def detect_language(text):
 # --- 8. Chat Logic ---
 if "messages" not in st.session_state:
     st.session_state.messages = [
-        {"role": "assistant", "content": "જયશ્રી કૃષ્ણ! 🙏 હું DEV છું. બોલો!"}
+        {"role": "assistant", "content": "જયશ્રી કૃષ્ણ! 🙏 હું DEV છું."}
     ]
 
 for message in st.session_state.messages:
@@ -203,12 +200,12 @@ if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું મ�
             with st.spinner("Thinking..."):
                 response_text = ""
                 
-                # Logic
+                # Logic (Internet/Image/Text)
                 if web_search:
                     current_time = get_current_time()
                     st.toast(f"Searching Web... 🌍")
                     search_results = search_internet(user_input)
-                    prompt = f"Time: {current_time}\nInfo: {search_results}\nQuestion: {user_input}\nAnswer in user's language."
+                    prompt = f"Time: {current_time}\nInfo: {search_results}\nQuestion: {user_input}\nAnswer in Gujarati."
                     response = model.generate_content(prompt)
                     response_text = response.text
                 elif uploaded_file is not None and uploaded_file.name.endswith(('.jpg', '.png', '.jpeg')):
@@ -230,10 +227,8 @@ if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું મ�
                         if m["role"] != "system" and "audio_bytes" not in m:
                             role = "model" if m["role"] == "assistant" else "user"
                             chat_history.append({"role": role, "parts": [m["content"]]})
-                    
                     prompt_with_time = f"Time: {current_time}\nUser: {user_input}\nReply in user's language (Gujarati/English)."
                     chat_history.append({"role": "user", "parts": [prompt_with_time]})
-                    
                     response = model.generate_content(chat_history)
                     response_text = response.text
 
