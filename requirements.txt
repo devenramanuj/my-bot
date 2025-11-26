@@ -1,8 +1,7 @@
-streamlit==1.29.0
+streamlit>=1.40.0
 google-generativeai
 Pillow
 PyPDF2
 gTTS
 duckduckgo-search
 pytz
-langdetect
