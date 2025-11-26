@@ -8,7 +8,12 @@ from duckduckgo_search import DDGS
 from datetime import datetime
 import pytz
 import re
-from langdetect import detect
+
+# --- Crash-proof langdetect import ---
+try:
+    from langdetect import detect
+except ImportError:
+    detect = lambda x: 'en'  # fallback to English
 
 # --- 1. Page Config ---
 st.set_page_config(page_title="DEV", page_icon="🤖", layout="centered")
@@ -31,36 +36,35 @@ main_bg, text_color, title_color = get_theme_colors()
 # --- 3. CSS Styling ---
 st.markdown(f"""
 <style>
-    .stApp {{
-        background-color: {main_bg} !important;
-        color: {text_color} !important;
-    }}
-    /* Hide Streamlit / GitHub logos & headers */
-    div[data-testid="stStatusWidget"],
-    div[data-testid="stToolbar"],
-    div[data-testid="stDecoration"],
-    header,
-    footer,
-    #MainMenu {{
-        visibility: hidden !important;
-        display: none !important;
-        height: 0px !important;
-        width: 0px !important;
-        opacity: 0 !important;
-        pointer-events: none !important;
-        z-index: -1 !important;
-    }}
-    h1 {{
-        font-family: 'Orbitron', sans-serif !important;
-        color: {title_color} !important;
-        text-align: center;
-        font-size: 3rem !important;
-        margin-top: 10px;
-    }}
-    .block-container {{
-        padding-top: 2rem !important;
-        padding-bottom: 140px !important;
-    }}
+.stApp {{
+    background-color: {main_bg} !important;
+    color: {text_color} !important;
+}}
+div[data-testid="stStatusWidget"],
+div[data-testid="stToolbar"],
+div[data-testid="stDecoration"],
+header,
+footer,
+#MainMenu {{
+    visibility: hidden !important;
+    display: none !important;
+    height: 0px !important;
+    width: 0px !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    z-index: -1 !important;
+}}
+h1 {{
+    font-family: 'Orbitron', sans-serif !important;
+    color: {title_color} !important;
+    text-align: center;
+    font-size: 3rem !important;
+    margin-top: 10px;
+}}
+.block-container {{
+    padding-top: 2rem !important;
+    padding-bottom: 140px !important;
+}}
 </style>
 """, unsafe_allow_html=True)
 
@@ -146,37 +150,28 @@ for message in st.session_state.messages:
         if "audio_bytes" in message:
             st.audio(message["audio_bytes"], format="audio/mp3")
 
-# --- 9. Live Typing Preview + Input ---
+# --- 9. Live Typing + Input ---
 typing_preview = st.empty()
 user_input = st.text_area("Type your message here...", height=80)
 
-# Live typing preview
 if user_input:
     typing_preview.markdown(f"<div style='background-color:#f0f0f0; padding:8px; border-radius:6px; margin-bottom:5px; color:{text_color};'><b>Typing:</b> {user_input}</div>", unsafe_allow_html=True)
 else:
     typing_preview.empty()
 
-# Submit button
+# Submit
 if st.button("Send"):
     if user_input.strip():
-        # Detect language
         try:
             user_lang = detect(user_input)
         except:
             user_lang = 'en'
-
-        # Prepare prompt with language
-        if user_lang == 'gu':
-            prompt_with_lang = f"તમે નીચેના પ્રશ્નનો જવાબ **ગુજરાતીમાં** આપો:\n{user_input}"
-        else:
-            prompt_with_lang = f"Answer the following question in **English**:\n{user_input}"
+        prompt_with_lang = f"તમે નીચેના પ્રશ્નનો જવાબ **ગુજરાતીમાં** આપો:\n{user_input}" if user_lang=='gu' else f"Answer the following question in **English**:\n{user_input}"
 
         # Add user message
         with st.chat_message("user", avatar="👤"):
             st.markdown(user_input)
         st.session_state.messages.append({"role": "user", "content": user_input})
-
-        # Clear typing preview & textarea
         typing_preview.empty()
         user_input = ""
 
@@ -184,14 +179,12 @@ if st.button("Send"):
         try:
             with st.chat_message("assistant", avatar="🤖"):
                 with st.spinner("વિચારી રહ્યો છું..."):
-                    # Use existing chat history logic
                     current_time = get_current_time()
                     chat_history = []
                     for m in st.session_state.messages:
                         if m["role"] != "system" and "audio_bytes" not in m:
                             role = "model" if m["role"] == "assistant" else "user"
                             chat_history.append({"role": role, "parts": [m["content"]]})
-
                     chat_history.append({"role": "user", "parts": [prompt_with_lang]})
                     response = model.generate_content(chat_history)
                     response_text = response.text
