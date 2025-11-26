@@ -30,7 +30,7 @@ else:
     text_color = "#000000"
     title_color = "#00008B"
 
-# --- 3. CSS Styling (Nuclear Logo Removal) ---
+# --- 3. CSS Styling (THE LIFT UP FIX) ---
 st.markdown(f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap');
@@ -44,35 +44,32 @@ st.markdown(f"""
         color: {text_color} !important;
     }}
 
-    /* 🛑 ULTIMATE LOGO KILLER (આ કોડ લોગોને ગાયબ કરશે) */
-    div[data-testid="stStatusWidget"],
-    div[data-testid="stToolbar"],
-    header, footer, #MainMenu, .stDeployButton {{
-        visibility: hidden !important;
-        display: none !important;
-        opacity: 0 !important;
-        height: 0px !important;
-        width: 0px !important;
-        position: absolute !important;
-        top: -9999px !important; /* સ્ક્રીનની બહાર ફેંકી દીધું */
-        left: -9999px !important;
-        pointer-events: none !important;
-    }}
-
-    /* 🛑 WHATSAPP KEYBOARD FIX */
+    /* 🛑 CHAT INPUT LIFT (બોક્સને ઉપર લેવાનો કોડ) */
     .stChatInput {{
         position: fixed !important;
-        bottom: 0px !important;
-        left: 0px !important;
-        right: 0px !important;
-        padding-bottom: 15px !important;
+        bottom: 60px !important; /* ⬆️ બોક્સને 60px ઉપર લીધું */
+        left: 0 !important;
+        right: 0 !important;
         padding-top: 15px !important;
+        padding-bottom: 15px !important;
         background-color: {main_bg} !important;
         z-index: 999999 !important;
         border-top: 1px solid {text_color};
     }}
+    
+    /* મેસેજ લિસ્ટ માટે નીચે જગ્યા (જેથી છેલ્લો મેસેજ દેખાય) */
+    .block-container {{
+        padding-top: 2rem !important;
+        padding-bottom: 160px !important; /* જગ્યા વધારી દીધી */
+    }}
 
-    /* Settings Menu */
+    /* લોગોને છુપાવવાનો પ્રયત્ન (જો કામ કરે તો) */
+    header, footer, #MainMenu, div[data-testid="stStatusWidget"], .stDeployButton {{
+        visibility: hidden !important;
+        display: none !important;
+    }}
+
+    /* Settings Menu Style */
     .streamlit-expanderContent {{
         background-color: #FFFFFF !important;
         border: 1px solid #000000 !important;
@@ -88,11 +85,6 @@ st.markdown(f"""
         text-align: center;
         font-size: 3rem !important;
         margin-top: 10px;
-    }}
-
-    .block-container {{
-        padding-top: 2rem !important;
-        padding-bottom: 130px !important;
     }}
     </style>
     """, unsafe_allow_html=True)
@@ -126,6 +118,7 @@ with st.expander("⚙️"):
     st.write("###### 📂 Files")
     uploaded_file = st.file_uploader("Upload", type=["jpg", "pdf"])
     
+    st.divider()
     if st.button("🗑️ Reset Chat"):
         st.session_state.messages = []
         st.rerun()
@@ -135,12 +128,11 @@ try:
     GOOGLE_API_KEY = st.secrets["GOOGLE_API_KEY"]
     genai.configure(api_key=GOOGLE_API_KEY)
     
-    # 🛑 SYSTEM PROMPT (Detailed Answer Instruction)
     sys_prompt = """
-    તારું નામ DEV (દેવ) છે. તું દેવેન્દ્રભાઈ રામાનુજ દ્વારા બનાવાયેલો પરિવારનો સભ્ય છે.
+    તારું નામ DEV (દેવ) છે. 
+    તું દેવેન્દ્રભાઈ રામાનુજ દ્વારા બનાવાયેલો પરિવારનો સભ્ય છે.
     તારે હંમેશા ગુજરાતીમાં જ વાત કરવાની છે.
-    તારે કોઈપણ પ્રશ્નનો જવાબ ટૂંકમાં નથી આપવાનો, પણ **વિસ્તૃત (Detailed)** અને **ઊંડાણપૂર્વક** સમજાવીને આપવાનો છે.
-    તારે જૂની વાતચીત યાદ રાખવાની છે.
+    તારે કોઈપણ પ્રશ્નનો જવાબ ટૂંકમાં નથી આપવાનો, પણ **વિસ્તૃત (Detailed)** સમજાવીને આપવાનો છે.
     """
     model = genai.GenerativeModel('gemini-2.0-flash', system_instruction=sys_prompt)
 except:
