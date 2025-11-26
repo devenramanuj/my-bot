@@ -9,10 +9,14 @@ from datetime import datetime
 import pytz
 import re
 
-# --- 1. Page Config ---
+# ---------------------------------------------------------------
+# 1. PAGE CONFIG
+# ---------------------------------------------------------------
 st.set_page_config(page_title="DEV", page_icon="🤖", layout="centered")
 
-# --- 2. Theme Logic ---
+# ---------------------------------------------------------------
+# 2. THEME STATE
+# ---------------------------------------------------------------
 if "theme" not in st.session_state:
     st.session_state.theme = False
 
@@ -28,245 +32,201 @@ else:
     text_color = "#000000"
     title_color = "#00008B"
 
-# --- 3. CSS Styling (The Ultimate Fix) ---
+# ---------------------------------------------------------------
+# 3. CSS (LOGO + MENU + FOOTER REMOVE + UI CLEAN)
+# ---------------------------------------------------------------
 st.markdown(f"""
-    <style>
-    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap');
+<style>
+/* Background + Text */
+.stApp {{
+    background-color: {main_bg} !important;
+    color: {text_color} !important;
+}}
+p, div, span, li, label, h1, h2, h3, h4, h5, h6 {{
+    color: {text_color} !important;
+}}
 
-    .stApp {{
-        background-color: {main_bg} !important;
-        color: {text_color} !important;
-    }}
-    
-    p, div, span, li, label, h1, h2, h3, h4, h5, h6, .stMarkdown {{
-        color: {text_color} !important;
-    }}
+/* STREAMLIT LOGO + GITHUB ICON REMOVE */
+a[data-testid="stAppGithubIcon"] {{ display: none !important; }}
+img[alt="Streamlit"] {{ display: none !important; }}
+#MainMenu {{ visibility: hidden; }}
+header {{ visibility: hidden; }}
+footer {{ visibility: hidden; }}
 
-    /* ============================================================ */
-    /* 🛑 1. LOGO KILLER (લોગોને જડમૂળથી હટાવવા)                  */
-    /* ============================================================ */
-    
-    /* Manage App Button, Decoration, Toolbar, Footer - બધું ગાયબ */
-    div[data-testid="stStatusWidget"],
-    div[data-testid="stToolbar"],
-    div[data-testid="stDecoration"],
-    header,
-    footer,
-    #MainMenu {{
-        visibility: hidden !important;
-        display: none !important;
-        height: 0px !important;
-        width: 0px !important;
-        opacity: 0 !important;
-        pointer-events: none !important; /* ક્લિક બ્લોક કરો */
-        z-index: -1 !important; /* છેક પાછળ ધકેલો */
-    }}
+/* Bottom Chat Box */
+[data-testid="stBottom"] {{
+    background-color: {main_bg} !important;
+    padding-top: 15px !important;
+    padding-bottom: 15px !important;
+    z-index: 99999 !important;
+}}
 
-    /* ============================================================ */
-    /* 🛑 2. CHAT BOX & SEND BUTTON (સૌથી ઉપર)                    */
-    /* ============================================================ */
-    
-    /* ચેટ બોક્સ કન્ટેનર */
-    [data-testid="stBottom"] {{
-        background-color: {main_bg} !important;
-        z-index: 999999 !important; /* સૌથી ઉપર */
-        padding-bottom: 15px !important;
-        padding-top: 15px !important;
-    }}
+.stChatInput {{
+    background: transparent !important;
+    border-top: 1px solid {text_color} !important;
+}}
 
-    /* ઇનપુટ બોક્સ */
-    .stChatInput {{
-        border-top: 1px solid {text_color};
-        background-color: transparent !important;
-        z-index: 9999999 !important;
-    }}
-    
-    /* Send બટન */
-    button[data-testid="stChatInputSubmitButton"] {{
-        z-index: 10000000 !important; /* લોગો કરતા 1 કરોડ ગણું ઉપર! */
-        background-color: transparent !important;
-        border: none !important;
-    }}
+button[data-testid="stChatInputSubmitButton"] {{
+    background: transparent !important;
+    border: none !important;
+    z-index: 999999 !important;
+}}
 
-    /* ============================================================ */
+/* Title */
+h1 {{
+    font-family: Arial Black !important;
+    color: {title_color} !important;
+    text-align: center;
+    font-size: 3rem !important;
+}}
 
-    /* Settings Menu */
-    .streamlit-expanderContent {{
-        background-color: #FFFFFF !important;
-        border: 1px solid #000000 !important;
-        border-radius: 10px;
-    }}
-    .streamlit-expanderContent * {{
-        color: #000000 !important;
-    }}
+/* Page spacing */
+.block-container {{
+    padding-bottom: 120px !important;
+}}
+</style>
+""", unsafe_allow_html=True)
 
-    /* Title */
-    h1 {{
-        font-family: 'Orbitron', sans-serif !important;
-        color: {title_color} !important;
-        text-align: center;
-        font-size: 3rem !important;
-        margin-top: 10px;
-    }}
-
-    /* મેસેજ દબાઈ ન જાય તે માટે જગ્યા */
-    .block-container {{
-        padding-top: 2rem !important;
-        padding-bottom: 140px !important;
-    }}
-    </style>
-    """, unsafe_allow_html=True)
-
-# --- 4. Layout ---
+# ---------------------------------------------------------------
+# 4. HEADER
+# ---------------------------------------------------------------
 st.markdown(f"""
-    <h1 style='display: flex; align-items: center; justify-content: center; gap: 15px;'>
-        <img src="https://cdn-icons-png.flaticon.com/512/2040/2040946.png" width="50" height="50" style="vertical-align: middle;">
-        DEV
-    </h1>
-    <div style='text-align: center; color: {text_color}; font-size: 13px; margin-bottom: 10px; opacity: 0.9;'>
-        Developed by <b>Devendra Ramanuj</b> | 📱 9276505035
-    </div>
-    """, unsafe_allow_html=True)
+<h1>DEV</h1>
+<div style='text-align:center; font-size:13px; opacity:0.9;'>
+Developed by <b>Devendra Ramanuj</b> | 9276505035
+</div>
+""", unsafe_allow_html=True)
 
 st.write("---")
 
-# --- 5. Settings Menu ---
+# ---------------------------------------------------------------
+# 5. SETTINGS MENU
+# ---------------------------------------------------------------
 web_search = False
 
 with st.expander("⚙️"):
-    col_a, col_b = st.columns(2)
-    with col_a:
-        st.write("###### 🎨 Theme")
-        st.toggle("🌗 Mode", value=st.session_state.theme, on_change=toggle_theme)
-    with col_b:
-        st.write("###### 🌍 Internet")
+    col1, col2 = st.columns(2)
+    with col1:
+        st.write("###### Theme")
+        st.toggle("Dark Mode", value=st.session_state.theme, on_change=toggle_theme)
+
+    with col2:
+        st.write("###### Internet")
         web_search = st.toggle("Live Search")
-    
+
     st.divider()
-    st.write("###### 📂 Files")
-    uploaded_file = st.file_uploader("Upload", type=["jpg", "pdf"])
-    
+    uploaded_file = st.file_uploader("Upload File", type=["jpg", "png", "pdf"])
     st.divider()
-    if st.button("🗑️ Reset Chat"):
+
+    if st.button("🗑 Reset Chat"):
         st.session_state.messages = []
         st.rerun()
 
-# --- 6. API Setup ---
+# ---------------------------------------------------------------
+# 6. API KEY
+# ---------------------------------------------------------------
 try:
     GOOGLE_API_KEY = st.secrets["GOOGLE_API_KEY"]
     genai.configure(api_key=GOOGLE_API_KEY)
-    
+
     sys_prompt = """
-    તારું નામ DEV (દેવ) છે. 
-    તું દેવેન્દ્રભાઈ રામાનુજ દ્વારા બનાવાયેલો પરિવારનો એક સભ્ય છે.
-    તારે હંમેશા ગુજરાતીમાં જ વાત કરવાની છે.
-    તારે દેવેન્દ્રભાઈનો આભારી છે.
+    તારું નામ DEV છે.
+    તારે હંમેશા ગુજરાતીમાં જ વાત કરવી.
     """
     model = genai.GenerativeModel('gemini-2.0-flash', system_instruction=sys_prompt)
+
 except:
-    st.error("Error: Please check API Key.")
+    st.error("Error: API Key Missing.")
     st.stop()
 
-# --- 7. Functions ---
+# ---------------------------------------------------------------
+# 7. SMALL FUNCTIONS
+# ---------------------------------------------------------------
 def get_current_time():
     IST = pytz.timezone('Asia/Kolkata')
-    now = datetime.now(IST)
-    return now.strftime("%Y-%m-%d %H:%M:%S %p")
+    return datetime.now(IST).strftime("%Y-%m-%d %H:%M:%S %p")
 
 def search_internet(query):
     try:
         results = DDGS().text(query, max_results=3)
-        if results:
-            return "\n".join([f"- {r['body']}" for r in results])
+        return "\n".join([f"- {r['body']}" for r in results])
+    except:
         return "No results found."
-    except Exception as e:
-        return f"Search Error: {e}"
 
-def clean_text_for_audio(text):
-    clean = re.sub(r'[*#_`~]', '', text)
-    return clean.strip()
+def clean_text(text):
+    return re.sub(r'[*#_`~]', '', text).strip()
 
-# --- 8. Chat Logic ---
+# ---------------------------------------------------------------
+# 8. INITIAL MESSAGE
+# ---------------------------------------------------------------
 if "messages" not in st.session_state:
     st.session_state.messages = [
-        {"role": "assistant", "content": "જયશ્રી કૃષ્ણ! 🙏 હું DEV છું, આપના પરિવારનો સભ્ય."}
+        {"role": "assistant", "content": "જયશ્રી કૃષ્ણ! હું DEV છું."}
     ]
 
-for message in st.session_state.messages:
-    avatar = "🤖" if message["role"] == "assistant" else "👤"
-    with st.chat_message(message["role"], avatar=avatar):
-        st.markdown(message["content"])
-        if "audio_bytes" in message:
-            st.audio(message["audio_bytes"], format="audio/mp3")
+# ---------------------------------------------------------------
+# 9. LOAD CHAT HISTORY
+# ---------------------------------------------------------------
+for m in st.session_state.messages:
+    avatar = "🤖" if m["role"] == "assistant" else "👤"
+    with st.chat_message(m["role"], avatar=avatar):
+        st.markdown(m["content"])
+        if "audio" in m:
+            st.audio(m["audio"], format="audio/mp3")
 
-# --- 9. Input Processing ---
-if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું માઈક 🎙️ વાપરો)"):
+# ---------------------------------------------------------------
+# 10. CHAT INPUT
+# ---------------------------------------------------------------
+if user_input := st.chat_input("Ask DEV..."):
     
     with st.chat_message("user", avatar="👤"):
         st.markdown(user_input)
+
     st.session_state.messages.append({"role": "user", "content": user_input})
 
-    try:
-        with st.chat_message("assistant", avatar="🤖"):
-            with st.spinner("વિચારી રહ્યો છું..."):
-                response_text = ""
-                
-                # 1. Internet
-                if web_search:
-                    current_time = get_current_time()
-                    st.toast(f"Searching Web... 🌍")
-                    search_results = search_internet(user_input)
-                    prompt = f"Time: {current_time}\nInfo: {search_results}\nQuestion: {user_input}\nAnswer in Gujarati."
-                    response = model.generate_content(prompt)
-                    response_text = response.text
+    with st.chat_message("assistant", avatar="🤖"):
+        with st.spinner("વિચારી રહ્યો છું..."):
 
-                # 2. Image
-                elif uploaded_file is not None and uploaded_file.name.endswith(('.jpg', '.png', '.jpeg')):
-                    image = Image.open(uploaded_file)
-                    response = model.generate_content([user_input, image])
-                    response_text = response.text
-                
-                # 3. PDF
-                elif uploaded_file is not None and uploaded_file.name.endswith('.pdf'):
-                    pdf_reader = PyPDF2.PdfReader(uploaded_file)
-                    pdf_text = ""
-                    for page in pdf_reader.pages:
-                        pdf_text += page.extract_text()
-                    prompt = f"PDF: {pdf_text}\nQuestion: {user_input}"
-                    response = model.generate_content(prompt)
-                    response_text = response.text
-                
-                # 4. Normal
-                else:
-                    current_time = get_current_time()
-                    chat_history = []
-                    for m in st.session_state.messages:
-                        if m["role"] != "system" and "audio_bytes" not in m:
-                            role = "model" if m["role"] == "assistant" else "user"
-                            chat_history.append({"role": role, "parts": [m["content"]]})
-                    
-                    prompt_with_time = f"Time: {current_time}\nUser: {user_input}\nReply in Gujarati."
-                    chat_history.append({"role": "user", "parts": [prompt_with_time]})
-                    
-                    response = model.generate_content(chat_history)
-                    response_text = response.text
+            response_text = ""
 
-                st.markdown(response_text)
-                
-                # Voice
-                try:
-                    clean_voice_text = clean_text_for_audio(response_text)
-                    if clean_voice_text:
-                        tts = gTTS(text=clean_voice_text, lang='gu') 
-                        audio_bytes = io.BytesIO()
-                        tts.write_to_fp(audio_bytes)
-                        audio_bytes.seek(0)
-                        st.audio(audio_bytes, format="audio/mp3")
-                        st.session_state.messages.append({"role": "assistant", "content": response_text, "audio_bytes": audio_bytes})
-                    else:
-                        st.session_state.messages.append({"role": "assistant", "content": response_text})
-                except:
-                    st.session_state.messages.append({"role": "assistant", "content": response_text})
+            # Internet
+            if web_search:
+                info = search_internet(user_input)
+                prompt = f"Time: {get_current_time()}\nInfo:\n{info}\nUser: {user_input}"
+                response_text = model.generate_content(prompt).text
 
-    except Exception as e:
-        st.error(f"Error: {e}")
+            # Image
+            elif uploaded_file and uploaded_file.name.endswith(('.jpg', '.png')):
+                img = Image.open(uploaded_file)
+                response_text = model.generate_content([user_input, img]).text
+
+            # PDF
+            elif uploaded_file and uploaded_file.name.endswith('.pdf'):
+                pdf = PyPDF2.PdfReader(uploaded_file)
+                pdf_text = "".join([p.extract_text() for p in pdf.pages])
+                response_text = model.generate_content(f"PDF: {pdf_text}\nQ: {user_input}").text
+
+            # Normal chat
+            else:
+                prompt = f"Time: {get_current_time()}\nUser: {user_input}"
+                response_text = model.generate_content(prompt).text
+
+            st.markdown(response_text)
+
+            # Voice Output
+            try:
+                tts = gTTS(text=clean_text(response_text), lang="gu")
+                audio_bytes = io.BytesIO()
+                tts.write_to_fp(audio_bytes)
+                audio_bytes.seek(0)
+                st.audio(audio_bytes)
+                st.session_state.messages.append({
+                    "role": "assistant",
+                    "content": response_text,
+                    "audio": audio_bytes
+                })
+            except:
+                st.session_state.messages.append({
+                    "role": "assistant",
+                    "content": response_text
+                })
