@@ -8,6 +8,7 @@ from duckduckgo_search import DDGS
 from datetime import datetime
 import pytz
 import re
+from langdetect import detect
 
 # --- 1. Page Config ---
 st.set_page_config(page_title="DEV", page_icon="🤖", layout="centered")
@@ -19,23 +20,22 @@ if "theme" not in st.session_state:
 def toggle_theme():
     st.session_state.theme = not st.session_state.theme
 
-if st.session_state.theme:
-    main_bg = "#0E1117"
-    text_color = "#FFFFFF"
-    title_color = "#00C6FF"
-else:
-    main_bg = "#FFFFFF"
-    text_color = "#000000"
-    title_color = "#00008B"
+def get_theme_colors():
+    if st.session_state.theme:
+        return "#0E1117", "#FFFFFF", "#00C6FF"  # night: bg, text, title
+    else:
+        return "#FFFFFF", "#000000", "#00008B"  # day: bg, text, title
 
-# --- 3. CSS Styling (UI Fix + Logo Hide) ---
+main_bg, text_color, title_color = get_theme_colors()
+
+# --- 3. CSS Styling ---
 st.markdown(f"""
 <style>
     .stApp {{
         background-color: {main_bg} !important;
         color: {text_color} !important;
     }}
-    /* Hide default Streamlit & GitHub logos / headers / footers */
+    /* Hide Streamlit / GitHub logos & headers */
     div[data-testid="stStatusWidget"],
     div[data-testid="stToolbar"],
     div[data-testid="stDecoration"],
@@ -50,7 +50,6 @@ st.markdown(f"""
         pointer-events: none !important;
         z-index: -1 !important;
     }}
-    /* Title */
     h1 {{
         font-family: 'Orbitron', sans-serif !important;
         color: {title_color} !important;
@@ -65,7 +64,7 @@ st.markdown(f"""
 </style>
 """, unsafe_allow_html=True)
 
-# --- 4. Layout Header ---
+# --- 4. Header ---
 st.markdown(f"""
 <h1 style='display: flex; align-items: center; justify-content: center; gap: 15px;'>
     <img src="https://cdn-icons-png.flaticon.com/512/2040/2040946.png" width="50" height="50" style="vertical-align: middle;">
@@ -106,7 +105,7 @@ try:
     sys_prompt = """
     તારું નામ DEV (દેવ) છે. 
     તું દેવેન્દ્રભાઈ રામાનુજ દ્વારા બનાવાયેલો પરિવારનો એક સભ્ય છે.
-    તારે હંમેશા ગુજરાતીમાં જ વાત કરવાની છે.
+    તારે હંમેશા વપરાશકર્તાની ભાષા અનુસાર જવાબ આપવો: Gujarati → Gujarati, English → English.
     તારે દેવેન્દ્રભાઈનો આભારી છે.
     """
     model = genai.GenerativeModel('gemini-2.0-flash', system_instruction=sys_prompt)
@@ -133,13 +132,13 @@ def clean_text_for_audio(text):
     clean = re.sub(r'[*#_`~]', '', text)
     return clean.strip()
 
-# --- 8. Chat Logic ---
+# --- 8. Chat State ---
 if "messages" not in st.session_state:
     st.session_state.messages = [
         {"role": "assistant", "content": "જયશ્રી કૃષ્ણ! 🙏 હું DEV છું, આપના પરિવારનો સભ્ય."}
     ]
 
-# Display all messages
+# Show previous messages
 for message in st.session_state.messages:
     avatar = "🤖" if message["role"] == "assistant" else "👤"
     with st.chat_message(message["role"], avatar=avatar):
@@ -147,54 +146,62 @@ for message in st.session_state.messages:
         if "audio_bytes" in message:
             st.audio(message["audio_bytes"], format="audio/mp3")
 
-# --- 9. Live Typing Preview & Input ---
-typing_preview = st.empty()  # Placeholder for live preview
+# --- 9. Live Typing Preview + Input ---
+typing_preview = st.empty()
+user_input = st.text_area("Type your message here...", height=80)
 
-user_input = st.text_area("Ask DEV... (કી-બોર્ડનું માઈક 🎙️ વાપરો)", height=80)
-
-# Live preview above textbox
+# Live typing preview
 if user_input:
-    typing_preview.markdown(f"<div style='background-color:#f0f0f0; padding:8px; border-radius:6px; margin-bottom:5px;'><b>Typing:</b> {user_input}</div>", unsafe_allow_html=True)
+    typing_preview.markdown(f"<div style='background-color:#f0f0f0; padding:8px; border-radius:6px; margin-bottom:5px; color:{text_color};'><b>Typing:</b> {user_input}</div>", unsafe_allow_html=True)
 else:
     typing_preview.empty()
 
-# When user presses Enter / submits
+# Submit button
 if st.button("Send"):
     if user_input.strip():
+        # Detect language
+        try:
+            user_lang = detect(user_input)
+        except:
+            user_lang = 'en'
+
+        # Prepare prompt with language
+        if user_lang == 'gu':
+            prompt_with_lang = f"તમે નીચેના પ્રશ્નનો જવાબ **ગુજરાતીમાં** આપો:\n{user_input}"
+        else:
+            prompt_with_lang = f"Answer the following question in **English**:\n{user_input}"
+
         # Add user message
         with st.chat_message("user", avatar="👤"):
             st.markdown(user_input)
         st.session_state.messages.append({"role": "user", "content": user_input})
 
-        # Clear typing preview & text area
+        # Clear typing preview & textarea
         typing_preview.empty()
         user_input = ""
 
-        # --- Assistant Response ---
+        # Assistant response
         try:
             with st.chat_message("assistant", avatar="🤖"):
                 with st.spinner("વિચારી રહ્યો છું..."):
-                    # Existing response logic
+                    # Use existing chat history logic
                     current_time = get_current_time()
                     chat_history = []
                     for m in st.session_state.messages:
                         if m["role"] != "system" and "audio_bytes" not in m:
                             role = "model" if m["role"] == "assistant" else "user"
                             chat_history.append({"role": role, "parts": [m["content"]]})
-                    
-                    prompt_with_time = f"Time: {current_time}\nUser: {user_input}\nReply in Gujarati."
-                    chat_history.append({"role": "user", "parts": [prompt_with_time]})
-                    
+
+                    chat_history.append({"role": "user", "parts": [prompt_with_lang]})
                     response = model.generate_content(chat_history)
                     response_text = response.text
-
                     st.markdown(response_text)
 
                     # Voice
                     try:
                         clean_voice_text = clean_text_for_audio(response_text)
                         if clean_voice_text:
-                            tts = gTTS(text=clean_voice_text, lang='gu') 
+                            tts = gTTS(text=clean_voice_text, lang='gu' if user_lang=='gu' else 'en') 
                             audio_bytes = io.BytesIO()
                             tts.write_to_fp(audio_bytes)
                             audio_bytes.seek(0)
