@@ -40,6 +40,8 @@ st.markdown(f"""
     background-color: {main_bg} !important;
     color: {text_color} !important;
 }}
+
+/* Hide Streamlit / GitHub logos & footer */
 div[data-testid="stStatusWidget"],
 div[data-testid="stToolbar"],
 div[data-testid="stDecoration"],
@@ -54,6 +56,8 @@ footer,
     pointer-events: none !important;
     z-index: -1 !important;
 }}
+
+/* Title */
 h1 {{
     font-family: 'Orbitron', sans-serif !important;
     color: {title_color} !important;
@@ -64,6 +68,23 @@ h1 {{
 .block-container {{
     padding-top: 2rem !important;
     padding-bottom: 140px !important;
+}}
+
+/* Chat / Text Input Box */
+textarea, input[type="text"] {{
+    background-color: {main_bg} !important;
+    color: {text_color} !important;
+    border: 1px solid {text_color} !important;
+    border-radius: 8px;
+    padding: 6px;
+}}
+
+/* Send Button */
+button[data-testid="stChatInputSubmitButton"] {{
+    background-color: {title_color} !important;
+    color: {text_color} !important;
+    border-radius: 8px;
+    border: none !important;
 }}
 </style>
 """, unsafe_allow_html=True)
