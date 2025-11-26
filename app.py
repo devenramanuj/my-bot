@@ -20,15 +20,17 @@ def toggle_theme():
     st.session_state.theme = not st.session_state.theme
 
 if st.session_state.theme:
+    # 🌙 Night Mode
     main_bg = "#0E1117"
     text_color = "#FFFFFF"
     title_color = "#00C6FF"
 else:
+    # ☀️ Day Mode
     main_bg = "#FFFFFF"
     text_color = "#000000"
     title_color = "#00008B"
 
-# --- 3. CSS Styling (The Ultimate Fix) ---
+# --- 3. CSS Styling ---
 st.markdown(f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap');
@@ -42,53 +44,24 @@ st.markdown(f"""
         color: {text_color} !important;
     }}
 
-    /* ============================================================ */
-    /* 🛑 1. LOGO KILLER (લોગોને જડમૂળથી હટાવવા)                  */
-    /* ============================================================ */
-    
-    /* Manage App Button, Decoration, Toolbar, Footer - બધું ગાયબ */
-    div[data-testid="stStatusWidget"],
-    div[data-testid="stToolbar"],
-    div[data-testid="stDecoration"],
-    header,
-    footer,
-    #MainMenu {{
-        visibility: hidden !important;
+    /* LOGO REMOVER */
+    header, footer, #MainMenu, div[data-testid="stStatusWidget"], .stDeployButton {{
         display: none !important;
-        height: 0px !important;
-        width: 0px !important;
-        opacity: 0 !important;
-        pointer-events: none !important; /* ક્લિક બ્લોક કરો */
-        z-index: -1 !important; /* છેક પાછળ ધકેલો */
+        visibility: hidden !important;
     }}
 
-    /* ============================================================ */
-    /* 🛑 2. CHAT BOX & SEND BUTTON (સૌથી ઉપર)                    */
-    /* ============================================================ */
-    
-    /* ચેટ બોક્સ કન્ટેનર */
-    [data-testid="stBottom"] {{
-        background-color: {main_bg} !important;
-        z-index: 999999 !important; /* સૌથી ઉપર */
+    /* WHATSAPP KEYBOARD FIX */
+    .stChatInput {{
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
         padding-bottom: 15px !important;
         padding-top: 15px !important;
-    }}
-
-    /* ઇનપુટ બોક્સ */
-    .stChatInput {{
+        background-color: {main_bg} !important;
+        z-index: 999999 !important;
         border-top: 1px solid {text_color};
-        background-color: transparent !important;
-        z-index: 9999999 !important;
     }}
-    
-    /* Send બટન */
-    button[data-testid="stChatInputSubmitButton"] {{
-        z-index: 10000000 !important; /* લોગો કરતા 1 કરોડ ગણું ઉપર! */
-        background-color: transparent !important;
-        border: none !important;
-    }}
-
-    /* ============================================================ */
 
     /* Settings Menu */
     .streamlit-expanderContent {{
@@ -100,7 +73,6 @@ st.markdown(f"""
         color: #000000 !important;
     }}
 
-    /* Title */
     h1 {{
         font-family: 'Orbitron', sans-serif !important;
         color: {title_color} !important;
@@ -109,10 +81,9 @@ st.markdown(f"""
         margin-top: 10px;
     }}
 
-    /* મેસેજ દબાઈ ન જાય તે માટે જગ્યા */
     .block-container {{
         padding-top: 2rem !important;
-        padding-bottom: 140px !important;
+        padding-bottom: 130px !important;
     }}
     </style>
     """, unsafe_allow_html=True)
@@ -146,7 +117,6 @@ with st.expander("⚙️"):
     st.write("###### 📂 Files")
     uploaded_file = st.file_uploader("Upload", type=["jpg", "pdf"])
     
-    st.divider()
     if st.button("🗑️ Reset Chat"):
         st.session_state.messages = []
         st.rerun()
@@ -158,9 +128,8 @@ try:
     
     sys_prompt = """
     તારું નામ DEV (દેવ) છે. 
-    તું દેવેન્દ્રભાઈ રામાનુજ દ્વારા બનાવાયેલો પરિવારનો એક સભ્ય છે.
-    તારે હંમેશા ગુજરાતીમાં જ વાત કરવાની છે.
-    તારે દેવેન્દ્રભાઈનો આભારી છે.
+    તું દેવેન્દ્રભાઈ રામાનુજ દ્વારા બનાવાયેલો પરિવારનો સભ્ય છે.
+    સામાન્ય રીતે ગુજરાતીમાં વાત કરજે, પણ જો યુઝર English માં પૂછે તો English માં જવાબ આપજે.
     """
     model = genai.GenerativeModel('gemini-2.0-flash', system_instruction=sys_prompt)
 except:
@@ -186,10 +155,17 @@ def clean_text_for_audio(text):
     clean = re.sub(r'[*#_`~]', '', text)
     return clean.strip()
 
+# 🛑 LANGUAGE DETECTOR (નવું ફંક્શન)
+def detect_language(text):
+    # જો ટેક્સ્ટમાં ગુજરાતી અક્ષરો હોય તો 'gu', નહિતર 'en'
+    if re.search(r'[\u0A80-\u0AFF]', text):
+        return 'gu'
+    return 'en'
+
 # --- 8. Chat Logic ---
 if "messages" not in st.session_state:
     st.session_state.messages = [
-        {"role": "assistant", "content": "જયશ્રી કૃષ્ણ! 🙏 હું DEV છું, આપના પરિવારનો સભ્ય."}
+        {"role": "assistant", "content": "જયશ્રી કૃષ્ણ! 🙏 હું DEV છું."}
     ]
 
 for message in st.session_state.messages:
@@ -208,7 +184,7 @@ if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું મ�
 
     try:
         with st.chat_message("assistant", avatar="🤖"):
-            with st.spinner("વિચારી રહ્યો છું..."):
+            with st.spinner("Thinking..."):
                 response_text = ""
                 
                 # 1. Internet
@@ -216,7 +192,7 @@ if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું મ�
                     current_time = get_current_time()
                     st.toast(f"Searching Web... 🌍")
                     search_results = search_internet(user_input)
-                    prompt = f"Time: {current_time}\nInfo: {search_results}\nQuestion: {user_input}\nAnswer in Gujarati."
+                    prompt = f"Time: {current_time}\nInfo: {search_results}\nQuestion: {user_input}\nAnswer based on the language of the question (Gujarati or English)."
                     response = model.generate_content(prompt)
                     response_text = response.text
 
@@ -245,7 +221,8 @@ if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું મ�
                             role = "model" if m["role"] == "assistant" else "user"
                             chat_history.append({"role": role, "parts": [m["content"]]})
                     
-                    prompt_with_time = f"Time: {current_time}\nUser: {user_input}\nReply in Gujarati."
+                    # અહી સૂચના આપી કે ભાષા મુજબ જવાબ આપે
+                    prompt_with_time = f"Time: {current_time}\nUser: {user_input}\nReply in the same language as the user (Gujarati or English)."
                     chat_history.append({"role": "user", "parts": [prompt_with_time]})
                     
                     response = model.generate_content(chat_history)
@@ -253,11 +230,16 @@ if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું મ�
 
                 st.markdown(response_text)
                 
-                # Voice
+                # 🛑 SMART VOICE GENERATION
                 try:
                     clean_voice_text = clean_text_for_audio(response_text)
+                    
                     if clean_voice_text:
-                        tts = gTTS(text=clean_voice_text, lang='gu') 
+                        # ભાષા શોધો (Auto Detect)
+                        lang_code = detect_language(clean_voice_text)
+                        
+                        # જે ભાષા હોય તેમાં બોલો
+                        tts = gTTS(text=clean_voice_text, lang=lang_code) 
                         audio_bytes = io.BytesIO()
                         tts.write_to_fp(audio_bytes)
                         audio_bytes.seek(0)
