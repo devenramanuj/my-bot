@@ -44,8 +44,7 @@ st.markdown(f"""
         color: {text_color} !important;
     }}
 
-    /* 🛑 SETTINGS BUTTON FIX (Popover Styling) */
-    /* પોપઅપ મેનુ હંમેશા સફેદ અને અક્ષરો કાળા */
+    /* Settings Menu Fix */
     div[data-testid="stPopoverBody"] {{
         background-color: #FFFFFF !important;
         border: 2px solid #000000 !important;
@@ -55,7 +54,7 @@ st.markdown(f"""
         font-weight: 600 !important;
     }}
 
-    /* 🛑 WHATSAPP INPUT FIX */
+    /* WhatsApp Input Fix */
     .stChatInput {{
         position: fixed !important;
         bottom: 0px !important;
@@ -68,7 +67,7 @@ st.markdown(f"""
         border-top: 1px solid {text_color};
     }}
 
-    /* Hide Extra Logos */
+    /* Hide Extra Elements */
     header, footer, #MainMenu, div[data-testid="stStatusWidget"], .stDeployButton {{
         display: none !important;
         visibility: hidden !important;
@@ -102,14 +101,14 @@ st.markdown(f"""
 
 st.write("---")
 
-# --- 5. Settings Menu (Small Button) ---
+# --- 5. Settings Menu (Right Side) ---
 web_search = False
 
-# આનાથી બટન નાનું અને સેન્ટરમાં રહેશે
-col1, col2, col3 = st.columns([1, 0.3, 1]) 
+# કોલમ સેટિંગ: [ખાલી જગ્યા (6 ભાગ), બટન (1 ભાગ)]
+col_space, col_btn = st.columns([6, 1]) 
 
-with col2:
-    # અહીં Expander કાઢીને Popover મૂક્યું છે (નાનું બટન)
+with col_btn:
+    # અહીં જમણી બાજુ બટન આવશે
     with st.popover("⚙️", use_container_width=True):
         st.write("###### 🎨 Theme")
         st.toggle("🌗 Mode", value=st.session_state.theme, on_change=toggle_theme)
@@ -123,7 +122,7 @@ with col2:
         uploaded_file = st.file_uploader("Upload", type=["jpg", "pdf"])
         
         st.divider()
-        if st.button("🗑️ Reset Chat"):
+        if st.button("🗑️ Reset"):
             st.session_state.messages = []
             st.rerun()
 
@@ -132,14 +131,13 @@ try:
     GOOGLE_API_KEY = st.secrets["GOOGLE_API_KEY"]
     genai.configure(api_key=GOOGLE_API_KEY)
     
-    # Smart Prompt
     sys_prompt = """
     તારું નામ DEV (દેવ) છે. તું દેવેન્દ્રભાઈ રામાનુજ દ્વારા બનાવાયેલો પરિવારનો સભ્ય છે.
     તારે હંમેશા ગુજરાતીમાં જ વાત કરવાની છે.
     
     સૂચનાઓ:
-    1. જો સામાન્ય વાત હોય (કેમ છો, ગુડ મોર્નિંગ), તો ટૂંકમાં અને પ્રેમથી જવાબ આપવો.
-    2. જો કોઈ માહિતી માંગે, તો જ વિસ્તૃત સમજાવવું.
+    1. જો સામાન્ય વાત હોય, તો ટૂંકમાં અને પ્રેમથી જવાબ આપવો.
+    2. જો માહિતી માંગે, તો જ વિસ્તૃત સમજાવવું.
     3. તારે દેવેન્દ્રભાઈનો આભાર માનવાનો છે.
     """
     model = genai.GenerativeModel('gemini-2.0-flash', system_instruction=sys_prompt)
@@ -180,7 +178,6 @@ for message in st.session_state.messages:
             st.audio(message["audio_bytes"], format="audio/mp3")
 
 # --- 9. Input Processing ---
-# અહીં ટેક્સ્ટ બદલ્યો છે:
 if user_input := st.chat_input("દેવને પૂછો, અથવા કીબોર્ડનુ માઈક વાપરો."):
     
     with st.chat_message("user", avatar="👤"):
@@ -192,22 +189,17 @@ if user_input := st.chat_input("દેવને પૂછો, અથવા ક�
             with st.spinner("વિચારી રહ્યો છું..."):
                 response_text = ""
                 
-                # 1. Internet
                 if web_search:
                     current_time = get_current_time()
-                    st.toast(f"Searching Web... 🌍")
+                    st.toast(f"Searching... 🌍")
                     search_results = search_internet(user_input)
                     prompt = f"Time: {current_time}\nInfo: {search_results}\nQuestion: {user_input}\nAnswer in Gujarati politely."
                     response = model.generate_content(prompt)
                     response_text = response.text
-
-                # 2. Image
                 elif uploaded_file is not None and uploaded_file.name.endswith(('.jpg', '.png', '.jpeg')):
                     image = Image.open(uploaded_file)
                     response = model.generate_content([user_input, image])
                     response_text = response.text
-                
-                # 3. PDF
                 elif uploaded_file is not None and uploaded_file.name.endswith('.pdf'):
                     pdf_reader = PyPDF2.PdfReader(uploaded_file)
                     pdf_text = ""
@@ -216,8 +208,6 @@ if user_input := st.chat_input("દેવને પૂછો, અથવા ક�
                     prompt = f"PDF Context: {pdf_text}\n\nQuestion: {user_input}\nAnswer in detail."
                     response = model.generate_content(prompt)
                     response_text = response.text
-                
-                # 4. Normal
                 else:
                     gemini_history = []
                     for m in st.session_state.messages:
@@ -232,7 +222,6 @@ if user_input := st.chat_input("દેવને પૂછો, અથવા ક�
 
                 st.markdown(response_text)
                 
-                # Voice
                 try:
                     clean_voice_text = clean_text_for_audio(response_text)
                     if clean_voice_text:
