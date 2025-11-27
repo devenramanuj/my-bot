@@ -44,33 +44,34 @@ st.markdown(f"""
         color: {text_color} !important;
     }}
 
-    /* Hide Logos */
-    header, footer, #MainMenu, div[data-testid="stStatusWidget"], .stDeployButton {{
-        display: none !important;
-        visibility: hidden !important;
+    /* 🛑 SETTINGS BUTTON FIX (Popover Styling) */
+    /* પોપઅપ મેનુ હંમેશા સફેદ અને અક્ષરો કાળા */
+    div[data-testid="stPopoverBody"] {{
+        background-color: #FFFFFF !important;
+        border: 2px solid #000000 !important;
+    }}
+    div[data-testid="stPopoverBody"] * {{
+        color: #000000 !important;
+        font-weight: 600 !important;
     }}
 
-    /* Chat Input Lift (60px Up) */
+    /* 🛑 WHATSAPP INPUT FIX */
     .stChatInput {{
         position: fixed !important;
-        bottom: 60px !important;
-        left: 0 !important;
-        right: 0 !important;
-        padding-top: 15px !important;
+        bottom: 0px !important;
+        left: 0px !important;
+        right: 0px !important;
         padding-bottom: 15px !important;
+        padding-top: 15px !important;
         background-color: {main_bg} !important;
         z-index: 999999 !important;
         border-top: 1px solid {text_color};
     }}
 
-    /* Settings Menu */
-    .streamlit-expanderContent {{
-        background-color: #FFFFFF !important;
-        border: 1px solid #000000 !important;
-        border-radius: 10px;
-    }}
-    .streamlit-expanderContent * {{
-        color: #000000 !important;
+    /* Hide Extra Logos */
+    header, footer, #MainMenu, div[data-testid="stStatusWidget"], .stDeployButton {{
+        display: none !important;
+        visibility: hidden !important;
     }}
 
     h1 {{
@@ -83,7 +84,7 @@ st.markdown(f"""
 
     .block-container {{
         padding-top: 2rem !important;
-        padding-bottom: 160px !important;
+        padding-bottom: 130px !important;
     }}
     </style>
     """, unsafe_allow_html=True)
@@ -101,40 +102,44 @@ st.markdown(f"""
 
 st.write("---")
 
-# --- 5. Settings Menu ---
+# --- 5. Settings Menu (Small Button) ---
 web_search = False
 
-with st.expander("⚙️"):
-    col_a, col_b = st.columns(2)
-    with col_a:
+# આનાથી બટન નાનું અને સેન્ટરમાં રહેશે
+col1, col2, col3 = st.columns([1, 0.3, 1]) 
+
+with col2:
+    # અહીં Expander કાઢીને Popover મૂક્યું છે (નાનું બટન)
+    with st.popover("⚙️", use_container_width=True):
         st.write("###### 🎨 Theme")
         st.toggle("🌗 Mode", value=st.session_state.theme, on_change=toggle_theme)
-    with col_b:
+        
+        st.divider()
         st.write("###### 🌍 Internet")
         web_search = st.toggle("Live Search")
-    
-    st.divider()
-    st.write("###### 📂 Files")
-    uploaded_file = st.file_uploader("Upload", type=["jpg", "pdf"])
-    
-    st.divider()
-    if st.button("🗑️ Reset Chat"):
-        st.session_state.messages = []
-        st.rerun()
+        
+        st.divider()
+        st.write("###### 📂 Files")
+        uploaded_file = st.file_uploader("Upload", type=["jpg", "pdf"])
+        
+        st.divider()
+        if st.button("🗑️ Reset Chat"):
+            st.session_state.messages = []
+            st.rerun()
 
-# --- 6. API Setup (અહીં સુધારો કર્યો છે) ---
+# --- 6. API Setup ---
 try:
     GOOGLE_API_KEY = st.secrets["GOOGLE_API_KEY"]
     genai.configure(api_key=GOOGLE_API_KEY)
     
-    # 🛑 SMART PROMPT (હવે તે સમજી જશે)
+    # Smart Prompt
     sys_prompt = """
     તારું નામ DEV (દેવ) છે. તું દેવેન્દ્રભાઈ રામાનુજ દ્વારા બનાવાયેલો પરિવારનો સભ્ય છે.
     તારે હંમેશા ગુજરાતીમાં જ વાત કરવાની છે.
     
-    તારે જવાબ કેવી રીતે આપવો:
-    1. જો કોઈ **"ગુડ મોર્નિંગ", "કેમ છો", "જય શ્રી કૃષ્ણ"** જેવી સામાન્ય વાત કરે, તો જવાબ **ટૂંકો, મીઠો અને નેચરલ** આપવો. (તેના પર ભાષણ ન આપવું).
-    2. જો કોઈ **માહિતી, જ્ઞાન કે પ્રશ્ન** પૂછે, તો જ જવાબ **વિસ્તૃત (Detailed)** આપવો.
+    સૂચનાઓ:
+    1. જો સામાન્ય વાત હોય (કેમ છો, ગુડ મોર્નિંગ), તો ટૂંકમાં અને પ્રેમથી જવાબ આપવો.
+    2. જો કોઈ માહિતી માંગે, તો જ વિસ્તૃત સમજાવવું.
     3. તારે દેવેન્દ્રભાઈનો આભાર માનવાનો છે.
     """
     model = genai.GenerativeModel('gemini-2.0-flash', system_instruction=sys_prompt)
@@ -175,7 +180,8 @@ for message in st.session_state.messages:
             st.audio(message["audio_bytes"], format="audio/mp3")
 
 # --- 9. Input Processing ---
-if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું માઈક 🎙️ વાપરો)"):
+# અહીં ટેક્સ્ટ બદલ્યો છે:
+if user_input := st.chat_input("દેવને પૂછો, અથવા કીબોર્ડનુ માઈક વાપરો."):
     
     with st.chat_message("user", avatar="👤"):
         st.markdown(user_input)
@@ -186,18 +192,22 @@ if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું મ�
             with st.spinner("વિચારી રહ્યો છું..."):
                 response_text = ""
                 
-                # Logic
+                # 1. Internet
                 if web_search:
                     current_time = get_current_time()
                     st.toast(f"Searching Web... 🌍")
                     search_results = search_internet(user_input)
-                    prompt = f"Time: {current_time}\nInfo: {search_results}\nQuestion: {user_input}\nAnswer in Gujarati."
+                    prompt = f"Time: {current_time}\nInfo: {search_results}\nQuestion: {user_input}\nAnswer in Gujarati politely."
                     response = model.generate_content(prompt)
                     response_text = response.text
+
+                # 2. Image
                 elif uploaded_file is not None and uploaded_file.name.endswith(('.jpg', '.png', '.jpeg')):
                     image = Image.open(uploaded_file)
                     response = model.generate_content([user_input, image])
                     response_text = response.text
+                
+                # 3. PDF
                 elif uploaded_file is not None and uploaded_file.name.endswith('.pdf'):
                     pdf_reader = PyPDF2.PdfReader(uploaded_file)
                     pdf_text = ""
@@ -206,16 +216,18 @@ if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું મ�
                     prompt = f"PDF Context: {pdf_text}\n\nQuestion: {user_input}\nAnswer in detail."
                     response = model.generate_content(prompt)
                     response_text = response.text
+                
+                # 4. Normal
                 else:
-                    chat_history = []
+                    gemini_history = []
                     for m in st.session_state.messages:
                         if m["role"] != "system" and "audio_bytes" not in m:
                             role = "model" if m["role"] == "assistant" else "user"
                             if m["content"] != user_input: 
-                                chat_history.append({"role": role, "parts": [m["content"]]})
+                                gemini_history.append({"role": role, "parts": [m["content"]]})
                     
-                    chat = model.start_chat(history=chat_history)
-                    response = chat.send_message(user_input) # "વિસ્તારથી સમજાવ" કાઢી નાખ્યું, પ્રોમ્પ્ટ સંભાળી લેશે
+                    chat = model.start_chat(history=gemini_history)
+                    response = chat.send_message(user_input)
                     response_text = response.text
 
                 st.markdown(response_text)
@@ -225,12 +237,11 @@ if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું મ�
                     clean_voice_text = clean_text_for_audio(response_text)
                     if clean_voice_text:
                         tts = gTTS(text=clean_voice_text, lang='gu') 
-                        audio_buffer = io.BytesIO()
-                        tts.write_to_fp(audio_buffer)
-                        audio_data = audio_buffer.getvalue()
-                        
-                        st.audio(audio_data, format="audio/mp3")
-                        st.session_state.messages.append({"role": "assistant", "content": response_text, "audio_bytes": audio_data})
+                        audio_bytes = io.BytesIO()
+                        tts.write_to_fp(audio_bytes)
+                        audio_bytes.seek(0)
+                        st.audio(audio_bytes, format="audio/mp3")
+                        st.session_state.messages.append({"role": "assistant", "content": response_text, "audio_bytes": audio_bytes})
                     else:
                         st.session_state.messages.append({"role": "assistant", "content": response_text})
                 except:
