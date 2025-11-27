@@ -24,15 +24,13 @@ if st.session_state.theme:
     main_bg = "#0E1117"
     text_color = "#FFFFFF"
     title_color = "#00C6FF"
-    btn_border = "1px solid #FFFFFF"
 else:
     # ☀️ Day Mode
     main_bg = "#FFFFFF"
     text_color = "#000000"
     title_color = "#00008B"
-    btn_border = "1px solid #000000"
 
-# --- 3. CSS Styling ---
+# --- 3. CSS Styling (THE LIFT FIX) ---
 st.markdown(f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap');
@@ -46,40 +44,40 @@ st.markdown(f"""
         color: {text_color} !important;
     }}
 
-    /* 🛑 1. LOGO REMOVER (STRONG) */
-    div[data-testid="stStatusWidget"], 
-    div[data-testid="stToolbar"], 
-    header, footer, #MainMenu, .stDeployButton {{
-        visibility: hidden !important;
-        display: none !important;
-        height: 0 !important;
-        width: 0 !important;
-        opacity: 0 !important;
-        pointer-events: none !important;
-    }}
-
-    /* 🛑 2. WHATSAPP STYLE INPUT */
+    /* 🛑 CHAT BOX LIFT (બોક્સને ઉપર લેવાનો કોડ) */
     .stChatInput {{
         position: fixed !important;
-        bottom: 0px !important;
-        left: 0px !important;
-        right: 0px !important;
-        padding-bottom: 15px !important;
-        padding-top: 15px !important;
+        bottom: 70px !important; /* ⬆️ અહીં બોક્સને 70px ઉપર લીધું */
+        left: 0 !important;
+        right: 0 !important;
+        padding-top: 10px !important;
+        padding-bottom: 10px !important;
         background-color: {main_bg} !important;
         z-index: 999999 !important;
         border-top: 1px solid {text_color};
+        border-bottom: 1px solid {text_color}; /* નીચે પણ લાઈન */
+    }}
+    
+    /* લોગોને નીચે ખૂણામાં ધકેલી દીધો */
+    div[data-testid="stStatusWidget"] {{
+        bottom: 5px !important;
+        right: 5px !important;
+        z-index: 1 !important;
+        visibility: visible !important; /* ભલે દેખાય, પણ નીચે */
     }}
 
-    /* 🛑 3. SETTINGS BUTTON ALIGNMENT */
-    /* બટનને જમણી બાજુ ખૂણામાં ફિક્સ કરવા */
-    div[data-testid="column"]:nth-of-type(2) {{
-        display: flex;
-        justify-content: flex-end; /* Right Align */
-        align-items: center;
+    /* મેસેજ લિસ્ટ માટે નીચે જગ્યા (જેથી છેલ્લો મેસેજ દેખાય) */
+    .block-container {{
+        padding-top: 1rem !important;
+        padding-bottom: 180px !important; /* જગ્યા વધારી દીધી */
     }}
 
-    /* Settings Menu Colors */
+    /* Hide Extra Elements */
+    header, footer, #MainMenu, .stDeployButton {{
+        display: none !important;
+    }}
+
+    /* Settings Menu Style */
     div[data-testid="stPopoverBody"] {{
         background-color: #FFFFFF !important;
         border: 2px solid #000000 !important;
@@ -93,22 +91,14 @@ st.markdown(f"""
     h1 {{
         font-family: 'Orbitron', sans-serif !important;
         color: {title_color} !important;
-        text-align: left; /* ડાબી બાજુ */
+        text-align: left;
         font-size: 2.5rem !important;
         margin: 0;
-        padding: 0;
-    }}
-
-    /* Space Adjustment */
-    .block-container {{
-        padding-top: 1rem !important;
-        padding-bottom: 130px !important;
     }}
     </style>
     """, unsafe_allow_html=True)
 
-# --- 4. Header Layout (Title Left, Button Right) ---
-# અહીં આપણે સ્ક્રીનના બે ભાગ પાડ્યા: [85% નામ, 15% બટન]
+# --- 4. Header Layout ---
 col_title, col_btn = st.columns([85, 15])
 
 with col_title:
@@ -154,7 +144,6 @@ try:
     તારું નામ DEV (દેવ) છે. 
     તું દેવેન્દ્રભાઈ રામાનુજ દ્વારા બનાવાયેલો પરિવારનો એક સભ્ય છે.
     તારે હંમેશા ગુજરાતીમાં જ વાત કરવાની છે.
-    તારે દેવેન્દ્રભાઈનો આભાર માનવાનો છે.
     """
     model = genai.GenerativeModel('gemini-2.0-flash', system_instruction=sys_prompt)
 except:
@@ -239,7 +228,7 @@ if user_input := st.chat_input("દેવને પૂછો, અથવા ક�
 
                 st.markdown(response_text)
                 
-                # Voice (Fixed)
+                # Voice
                 try:
                     clean_voice_text = clean_text_for_audio(response_text)
                     if clean_voice_text:
