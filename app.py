@@ -14,40 +14,61 @@ st.set_page_config(page_title="DEV", page_icon="🤖", layout="centered")
 
 # --- 2. Theme Logic ---
 if "theme" not in st.session_state:
-    st.session_state.theme = False
+    st.session_state.theme = False # False = Day Mode, True = Night Mode
 
 def toggle_theme():
     st.session_state.theme = not st.session_state.theme
 
+# --- 3. Color Palettes (High Contrast) ---
 if st.session_state.theme:
-    # 🌙 Night Mode
-    main_bg = "#0E1117"
-    text_color = "#FFFFFF"
-    title_color = "#00C6FF"
+    # 🌙 Night Mode (Dark)
+    main_bg = "#000000"      # એકદમ કાળું
+    text_color = "#FFFFFF"   # એકદમ સફેદ
+    accent_color = "#00C6FF" # નિયોન બ્લુ
+    menu_bg = "#1E1E1E"      # મેનુ માટે ડાર્ક ગ્રે
+    input_bg = "#222222"     # ઈનપુટ બોક્સ
 else:
-    # ☀️ Day Mode
-    main_bg = "#FFFFFF"
-    text_color = "#000000"
-    title_color = "#00008B"
+    # ☀️ Day Mode (Light)
+    main_bg = "#FFFFFF"      # એકદમ સફેદ
+    text_color = "#000000"   # એકદમ કાળું
+    accent_color = "#00008B" # ડાર્ક બ્લુ
+    menu_bg = "#F0F2F6"      # મેનુ માટે આછું ગ્રે
+    input_bg = "#FFFFFF"     # ઈનપુટ બોક્સ
 
-# --- 3. CSS Styling (THE LIFT FIX) ---
+# --- 4. CSS Styling ---
 st.markdown(f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap');
 
+    /* Main App Background */
     .stApp {{
         background-color: {main_bg} !important;
         color: {text_color} !important;
     }}
     
-    p, div, span, li, label, h1, h2, h3, h4, h5, h6, .stMarkdown {{
+    /* All Text Elements (Force Color) */
+    p, div, span, li, label, h1, h2, h3, h4, h5, h6, .stMarkdown, .stCaption {{
         color: {text_color} !important;
     }}
 
-    /* 🛑 CHAT BOX LIFT (બોક્સને ઉપર લેવાનો કોડ) */
+    /* 🛑 SETTINGS MENU FIX (Expander/Popover) */
+    .streamlit-expanderContent, div[data-testid="stPopoverBody"] {{
+        background-color: {menu_bg} !important;
+        border: 1px solid {text_color} !important;
+        border-radius: 10px;
+    }}
+    
+    .streamlit-expanderHeader {{
+        background-color: {menu_bg} !important;
+        color: {text_color} !important;
+        border: 1px solid {text_color} !important;
+        border-radius: 10px;
+    }}
+
+    /* 🛑 CHAT INPUT LIFT (70px Up) */
     .stChatInput {{
         position: fixed !important;
-        bottom: 70px !important; /* ⬆️ અહીં બોક્સને 70px ઉપર લીધું */
+        bottom: 70px !important;
         left: 0 !important;
         right: 0 !important;
         padding-top: 10px !important;
@@ -55,69 +76,59 @@ st.markdown(f"""
         background-color: {main_bg} !important;
         z-index: 999999 !important;
         border-top: 1px solid {text_color};
-        border-bottom: 1px solid {text_color}; /* નીચે પણ લાઈન */
     }}
     
-    /* લોગોને નીચે ખૂણામાં ધકેલી દીધો */
-    div[data-testid="stStatusWidget"] {{
-        bottom: 5px !important;
-        right: 5px !important;
-        z-index: 1 !important;
-        visibility: visible !important; /* ભલે દેખાય, પણ નીચે */
-    }}
-
-    /* મેસેજ લિસ્ટ માટે નીચે જગ્યા (જેથી છેલ્લો મેસેજ દેખાય) */
-    .block-container {{
-        padding-top: 1rem !important;
-        padding-bottom: 180px !important; /* જગ્યા વધારી દીધી */
+    /* Input Inner Box Color */
+    .stChatInput textarea {{
+        background-color: {input_bg} !important;
+        color: {text_color} !important;
     }}
 
     /* Hide Extra Elements */
-    header, footer, #MainMenu, .stDeployButton {{
+    header, footer, #MainMenu, div[data-testid="stStatusWidget"], .stDeployButton {{
         display: none !important;
-    }}
-
-    /* Settings Menu Style */
-    div[data-testid="stPopoverBody"] {{
-        background-color: #FFFFFF !important;
-        border: 2px solid #000000 !important;
-    }}
-    div[data-testid="stPopoverBody"] * {{
-        color: #000000 !important;
-        font-weight: 600 !important;
+        visibility: hidden !important;
     }}
 
     /* Title Font */
     h1 {{
         font-family: 'Orbitron', sans-serif !important;
-        color: {title_color} !important;
-        text-align: left;
-        font-size: 2.5rem !important;
-        margin: 0;
+        color: {accent_color} !important;
+        text-align: center;
+        font-size: 3rem !important;
+        margin-top: 10px;
+    }}
+
+    .block-container {{
+        padding-top: 2rem !important;
+        padding-bottom: 150px !important;
     }}
     </style>
     """, unsafe_allow_html=True)
 
-# --- 4. Header Layout ---
-col_title, col_btn = st.columns([85, 15])
-
-with col_title:
-    st.markdown(f"""
-    <h1>
-        <img src="https://cdn-icons-png.flaticon.com/512/2040/2040946.png" width="40" height="40" style="vertical-align: middle;">
+# --- 5. Layout ---
+st.markdown(f"""
+    <h1 style='display: flex; align-items: center; justify-content: center; gap: 15px;'>
+        <img src="https://cdn-icons-png.flaticon.com/512/2040/2040946.png" width="50" height="50" style="vertical-align: middle;">
         DEV
     </h1>
-    <div style='text-align: left; color: {text_color}; font-size: 11px; opacity: 0.8; margin-left: 5px;'>
-        By Devendra Ramanuj
+    <div style='text-align: center; color: {text_color}; font-size: 13px; margin-bottom: 10px; opacity: 0.9;'>
+        Developed by <b>Devendra Ramanuj</b> | 📱 9276505035
     </div>
     """, unsafe_allow_html=True)
 
-# 5. Settings Menu (Right Side)
+st.write("---")
+
+# --- 6. Settings Menu (Right Side) ---
 web_search = False
 
+col_title, col_btn = st.columns([6, 1]) 
+
 with col_btn:
+    # Settings Button
     with st.popover("⚙️", use_container_width=True):
         st.write("###### 🎨 Theme")
+        # સ્વિચ હવે પરફેક્ટ કામ કરશે
         st.toggle("🌗 Mode", value=st.session_state.theme, on_change=toggle_theme)
         
         st.divider()
@@ -133,9 +144,7 @@ with col_btn:
             st.session_state.messages = []
             st.rerun()
 
-st.write("---")
-
-# --- 6. API Setup ---
+# --- 7. API Setup ---
 try:
     GOOGLE_API_KEY = st.secrets["GOOGLE_API_KEY"]
     genai.configure(api_key=GOOGLE_API_KEY)
@@ -144,13 +153,14 @@ try:
     તારું નામ DEV (દેવ) છે. 
     તું દેવેન્દ્રભાઈ રામાનુજ દ્વારા બનાવાયેલો પરિવારનો એક સભ્ય છે.
     તારે હંમેશા ગુજરાતીમાં જ વાત કરવાની છે.
+    તારે દેવેન્દ્રભાઈનો આભાર માનવાનો છે.
     """
     model = genai.GenerativeModel('gemini-2.0-flash', system_instruction=sys_prompt)
 except:
     st.error("Error: Please check API Key.")
     st.stop()
 
-# --- 7. Functions ---
+# --- 8. Functions ---
 def get_current_time():
     IST = pytz.timezone('Asia/Kolkata')
     now = datetime.now(IST)
@@ -169,7 +179,7 @@ def clean_text_for_audio(text):
     clean = re.sub(r'[*#_`~]', '', text)
     return clean.strip()
 
-# --- 8. Chat Logic ---
+# --- 9. Chat Logic ---
 if "messages" not in st.session_state:
     st.session_state.messages = [
         {"role": "assistant", "content": "જયશ્રી કૃષ્ણ! 🙏 હું DEV છું."}
@@ -182,7 +192,7 @@ for message in st.session_state.messages:
         if "audio_bytes" in message:
             st.audio(message["audio_bytes"], format="audio/mp3")
 
-# --- 9. Input Processing ---
+# --- 10. Input Processing ---
 if user_input := st.chat_input("દેવને પૂછો, અથવા કીબોર્ડનુ માઈક વાપરો."):
     
     with st.chat_message("user", avatar="👤"):
