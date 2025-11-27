@@ -12,7 +12,7 @@ import re
 # --- 1. Page Config ---
 st.set_page_config(page_title="DEV", page_icon="🤖", layout="centered")
 
-# --- 2. CSS Styling (PREMIUM DARK MODE) ---
+# --- 2. CSS Styling (Premium Dark + LIFT FIX) ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap');
@@ -23,65 +23,64 @@ st.markdown("""
         color: #FFFFFF !important;
     }
     
-    /* 2. All Text Colors (White) */
+    /* 2. All Text Colors */
     p, div, span, li, label, h1, h2, h3, h4, h5, h6, .stMarkdown, .stCaption {
         color: #FFFFFF !important;
     }
 
-    /* 3. SETTINGS MENU STYLING (Thin Border) */
-    div[data-testid="stPopoverBody"] {
-        background-color: #1E1E1E !important;
-        border: 1px solid rgba(255, 255, 255, 0.2) !important; /* આછી બોર્ડર */
-        border-radius: 10px;
-    }
-    div[data-testid="stPopoverBody"] * {
-        color: #FFFFFF !important;
-    }
-
-    /* 4. INPUT BOX STYLING (White Text + Thin Border) */
+    /* 🛑 3. CHAT BOX LIFT (બોક્સને 60px ઉપર લીધું) */
     .stChatInput {
         position: fixed !important;
-        bottom: 0px !important;
+        bottom: 60px !important; /* ⬆️ અહીં ફેરફાર કર્યો */
         left: 0px !important;
         right: 0px !important;
         padding-bottom: 15px !important;
         padding-top: 15px !important;
         background-color: #0E1117 !important;
         z-index: 999999 !important;
-        border-top: 1px solid rgba(255, 255, 255, 0.2); /* ઉપર આછી લાઈન */
+        border-top: 1px solid rgba(255, 255, 255, 0.2);
     }
     
     /* અંદરનું બોક્સ */
     .stChatInput textarea {
         background-color: #1E1E1E !important;
-        color: #FFFFFF !important; /* લખેલું સફેદ દેખાશે */
-        border: 1px solid rgba(255, 255, 255, 0.3) !important; /* પાતળી બોર્ડર */
+        color: #FFFFFF !important;
+        border: 1px solid rgba(255, 255, 255, 0.3) !important;
         border-radius: 10px !important;
     }
     
-    /* Placeholder (દેવને પૂછો...) */
+    /* Placeholder Color */
     .stChatInput textarea::placeholder {
-        color: rgba(255, 255, 255, 0.6) !important; /* થોડું આછું સફેદ */
+        color: rgba(255, 255, 255, 0.6) !important;
     }
 
-    /* Hide Extra Elements */
+    /* 4. Settings Menu Styling */
+    div[data-testid="stPopoverBody"] {
+        background-color: #1E1E1E !important;
+        border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    }
+    div[data-testid="stPopoverBody"] * {
+        color: #FFFFFF !important;
+    }
+
+    /* Hide Logos (Best Effort) */
     header, footer, #MainMenu, div[data-testid="stStatusWidget"], .stDeployButton {
-        display: none !important;
         visibility: hidden !important;
     }
 
     /* Title Font */
     h1 {
         font-family: 'Orbitron', sans-serif !important;
-        color: #00C6FF !important; /* Neon Blue Title */
+        color: #00C6FF !important;
         text-align: center;
         font-size: 3rem !important;
         margin-top: 10px;
     }
 
+    /* મેસેજ લિસ્ટ માટે નીચે જગ્યા */
     .block-container {
         padding-top: 2rem !important;
-        padding-bottom: 130px !important;
+        padding-bottom: 160px !important; /* બોક્સ ઉપર આવ્યું એટલે જગ્યા વધારી */
     }
     </style>
     """, unsafe_allow_html=True)
@@ -105,7 +104,6 @@ web_search = False
 col1, col2 = st.columns([6, 1]) 
 
 with col2:
-    # નાનું બટન
     with st.popover("⚙️", use_container_width=True):
         st.write("###### 🌍 Internet")
         web_search = st.toggle("Live Search")
