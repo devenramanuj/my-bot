@@ -14,86 +14,85 @@ st.set_page_config(page_title="DEV", page_icon="🤖", layout="centered")
 
 # --- 2. Theme Logic ---
 if "theme" not in st.session_state:
-    st.session_state.theme = False # False = Day Mode, True = Night Mode
+    st.session_state.theme = False
 
 def toggle_theme():
     st.session_state.theme = not st.session_state.theme
 
-# --- 3. Color Palettes (High Contrast) ---
 if st.session_state.theme:
-    # 🌙 Night Mode (Dark)
-    main_bg = "#000000"      # એકદમ કાળું
-    text_color = "#FFFFFF"   # એકદમ સફેદ
-    accent_color = "#00C6FF" # નિયોન બ્લુ
-    menu_bg = "#1E1E1E"      # મેનુ માટે ડાર્ક ગ્રે
-    input_bg = "#222222"     # ઈનપુટ બોક્સ
+    # 🌙 Night Mode
+    main_bg = "#0E1117"
+    text_color = "#FFFFFF"
+    title_color = "#00C6FF"
+    input_text_color = "#FFFFFF" # ઇનપુટ અક્ષર સફેદ
 else:
-    # ☀️ Day Mode (Light)
-    main_bg = "#FFFFFF"      # એકદમ સફેદ
-    text_color = "#000000"   # એકદમ કાળું
-    accent_color = "#00008B" # ડાર્ક બ્લુ
-    menu_bg = "#F0F2F6"      # મેનુ માટે આછું ગ્રે
-    input_bg = "#FFFFFF"     # ઈનપુટ બોક્સ
+    # ☀️ Day Mode
+    main_bg = "#FFFFFF"
+    text_color = "#000000"
+    title_color = "#00008B"
+    input_text_color = "#000000" # ઇનપુટ અક્ષર કાળા
 
-# --- 4. CSS Styling ---
+# --- 3. CSS Styling (Text Visibility Fix) ---
 st.markdown(f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap');
 
-    /* Main App Background */
     .stApp {{
         background-color: {main_bg} !important;
         color: {text_color} !important;
     }}
     
-    /* All Text Elements (Force Color) */
-    p, div, span, li, label, h1, h2, h3, h4, h5, h6, .stMarkdown, .stCaption {{
+    p, div, span, li, label, h1, h2, h3, h4, h5, h6, .stMarkdown {{
         color: {text_color} !important;
     }}
 
-    /* 🛑 SETTINGS MENU FIX (Expander/Popover) */
-    .streamlit-expanderContent, div[data-testid="stPopoverBody"] {{
-        background-color: {menu_bg} !important;
-        border: 1px solid {text_color} !important;
-        border-radius: 10px;
+    /* 🛑 INPUT TEXT VISIBILITY FIX (આ મહત્વનું છે) */
+    
+    /* 1. તમે જે લખો છો તે અક્ષરોનો કલર */
+    .stChatInput textarea {{
+        color: {input_text_color} !important;
+        caret-color: {title_color} !important; /* કર્સરનો કલર */
     }}
     
-    .streamlit-expanderHeader {{
-        background-color: {menu_bg} !important;
-        color: {text_color} !important;
-        border: 1px solid {text_color} !important;
-        border-radius: 10px;
+    /* 2. "દેવને પૂછો..." (Placeholder) નો કલર */
+    .stChatInput textarea::placeholder {{
+        color: {input_text_color} !important;
+        opacity: 0.7 !important; /* થોડું આછું રાખ્યું છે */
+        font-weight: bold !important;
     }}
 
-    /* 🛑 CHAT INPUT LIFT (70px Up) */
+    /* 3. WhatsApp Style Box Position */
     .stChatInput {{
         position: fixed !important;
-        bottom: 70px !important;
-        left: 0 !important;
-        right: 0 !important;
-        padding-top: 10px !important;
-        padding-bottom: 10px !important;
+        bottom: 0px !important;
+        left: 0px !important;
+        right: 0px !important;
+        padding-bottom: 15px !important;
+        padding-top: 15px !important;
         background-color: {main_bg} !important;
         z-index: 999999 !important;
         border-top: 1px solid {text_color};
     }}
-    
-    /* Input Inner Box Color */
-    .stChatInput textarea {{
-        background-color: {input_bg} !important;
-        color: {text_color} !important;
-    }}
 
-    /* Hide Extra Elements */
+    /* Hide Logos */
     header, footer, #MainMenu, div[data-testid="stStatusWidget"], .stDeployButton {{
         display: none !important;
         visibility: hidden !important;
     }}
 
-    /* Title Font */
+    /* Settings Menu */
+    .streamlit-expanderContent {{
+        background-color: #FFFFFF !important;
+        border: 1px solid #000000 !important;
+        border-radius: 10px;
+    }}
+    .streamlit-expanderContent * {{
+        color: #000000 !important;
+    }}
+
     h1 {{
         font-family: 'Orbitron', sans-serif !important;
-        color: {accent_color} !important;
+        color: {title_color} !important;
         text-align: center;
         font-size: 3rem !important;
         margin-top: 10px;
@@ -101,12 +100,12 @@ st.markdown(f"""
 
     .block-container {{
         padding-top: 2rem !important;
-        padding-bottom: 150px !important;
+        padding-bottom: 130px !important;
     }}
     </style>
     """, unsafe_allow_html=True)
 
-# --- 5. Layout ---
+# --- 4. Layout ---
 st.markdown(f"""
     <h1 style='display: flex; align-items: center; justify-content: center; gap: 15px;'>
         <img src="https://cdn-icons-png.flaticon.com/512/2040/2040946.png" width="50" height="50" style="vertical-align: middle;">
@@ -119,16 +118,15 @@ st.markdown(f"""
 
 st.write("---")
 
-# --- 6. Settings Menu (Right Side) ---
+# --- 5. Settings Menu ---
 web_search = False
 
-col_title, col_btn = st.columns([6, 1]) 
+# બટન જમણી બાજુ
+col1, col2 = st.columns([6, 1]) 
 
-with col_btn:
-    # Settings Button
+with col2:
     with st.popover("⚙️", use_container_width=True):
         st.write("###### 🎨 Theme")
-        # સ્વિચ હવે પરફેક્ટ કામ કરશે
         st.toggle("🌗 Mode", value=st.session_state.theme, on_change=toggle_theme)
         
         st.divider()
@@ -144,7 +142,7 @@ with col_btn:
             st.session_state.messages = []
             st.rerun()
 
-# --- 7. API Setup ---
+# --- 6. API Setup ---
 try:
     GOOGLE_API_KEY = st.secrets["GOOGLE_API_KEY"]
     genai.configure(api_key=GOOGLE_API_KEY)
@@ -160,7 +158,7 @@ except:
     st.error("Error: Please check API Key.")
     st.stop()
 
-# --- 8. Functions ---
+# --- 7. Functions ---
 def get_current_time():
     IST = pytz.timezone('Asia/Kolkata')
     now = datetime.now(IST)
@@ -179,10 +177,10 @@ def clean_text_for_audio(text):
     clean = re.sub(r'[*#_`~]', '', text)
     return clean.strip()
 
-# --- 9. Chat Logic ---
+# --- 8. Chat Logic ---
 if "messages" not in st.session_state:
     st.session_state.messages = [
-        {"role": "assistant", "content": "જયશ્રી કૃષ્ણ! 🙏 હું DEV છું."}
+        {"role": "assistant", "content": "જયશ્રી કૃષ્ણ! 🙏 હું DEV છું. બોલો!"}
     ]
 
 for message in st.session_state.messages:
@@ -192,7 +190,7 @@ for message in st.session_state.messages:
         if "audio_bytes" in message:
             st.audio(message["audio_bytes"], format="audio/mp3")
 
-# --- 10. Input Processing ---
+# --- 9. Input Processing ---
 if user_input := st.chat_input("દેવને પૂછો, અથવા કીબોર્ડનુ માઈક વાપરો."):
     
     with st.chat_message("user", avatar="👤"):
