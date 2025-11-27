@@ -24,11 +24,13 @@ if st.session_state.theme:
     main_bg = "#0E1117"
     text_color = "#FFFFFF"
     title_color = "#00C6FF"
+    btn_border = "1px solid #FFFFFF"
 else:
     # ☀️ Day Mode
     main_bg = "#FFFFFF"
     text_color = "#000000"
     title_color = "#00008B"
+    btn_border = "1px solid #000000"
 
 # --- 3. CSS Styling ---
 st.markdown(f"""
@@ -44,17 +46,19 @@ st.markdown(f"""
         color: {text_color} !important;
     }}
 
-    /* Settings Menu Fix */
-    div[data-testid="stPopoverBody"] {{
-        background-color: #FFFFFF !important;
-        border: 2px solid #000000 !important;
-    }}
-    div[data-testid="stPopoverBody"] * {{
-        color: #000000 !important;
-        font-weight: 600 !important;
+    /* 🛑 1. LOGO REMOVER (STRONG) */
+    div[data-testid="stStatusWidget"], 
+    div[data-testid="stToolbar"], 
+    header, footer, #MainMenu, .stDeployButton {{
+        visibility: hidden !important;
+        display: none !important;
+        height: 0 !important;
+        width: 0 !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
     }}
 
-    /* WhatsApp Input Fix */
+    /* 🛑 2. WHATSAPP STYLE INPUT */
     .stChatInput {{
         position: fixed !important;
         bottom: 0px !important;
@@ -67,48 +71,61 @@ st.markdown(f"""
         border-top: 1px solid {text_color};
     }}
 
-    /* Hide Extra Elements */
-    header, footer, #MainMenu, div[data-testid="stStatusWidget"], .stDeployButton {{
-        display: none !important;
-        visibility: hidden !important;
+    /* 🛑 3. SETTINGS BUTTON ALIGNMENT */
+    /* બટનને જમણી બાજુ ખૂણામાં ફિક્સ કરવા */
+    div[data-testid="column"]:nth-of-type(2) {{
+        display: flex;
+        justify-content: flex-end; /* Right Align */
+        align-items: center;
     }}
 
+    /* Settings Menu Colors */
+    div[data-testid="stPopoverBody"] {{
+        background-color: #FFFFFF !important;
+        border: 2px solid #000000 !important;
+    }}
+    div[data-testid="stPopoverBody"] * {{
+        color: #000000 !important;
+        font-weight: 600 !important;
+    }}
+
+    /* Title Font */
     h1 {{
         font-family: 'Orbitron', sans-serif !important;
         color: {title_color} !important;
-        text-align: center;
-        font-size: 3rem !important;
-        margin-top: 10px;
+        text-align: left; /* ડાબી બાજુ */
+        font-size: 2.5rem !important;
+        margin: 0;
+        padding: 0;
     }}
 
+    /* Space Adjustment */
     .block-container {{
-        padding-top: 2rem !important;
+        padding-top: 1rem !important;
         padding-bottom: 130px !important;
     }}
     </style>
     """, unsafe_allow_html=True)
 
-# --- 4. Layout ---
-st.markdown(f"""
-    <h1 style='display: flex; align-items: center; justify-content: center; gap: 15px;'>
-        <img src="https://cdn-icons-png.flaticon.com/512/2040/2040946.png" width="50" height="50" style="vertical-align: middle;">
+# --- 4. Header Layout (Title Left, Button Right) ---
+# અહીં આપણે સ્ક્રીનના બે ભાગ પાડ્યા: [85% નામ, 15% બટન]
+col_title, col_btn = st.columns([85, 15])
+
+with col_title:
+    st.markdown(f"""
+    <h1>
+        <img src="https://cdn-icons-png.flaticon.com/512/2040/2040946.png" width="40" height="40" style="vertical-align: middle;">
         DEV
     </h1>
-    <div style='text-align: center; color: {text_color}; font-size: 13px; margin-bottom: 10px; opacity: 0.9;'>
-        Developed by <b>Devendra Ramanuj</b> | 📱 9276505035
+    <div style='text-align: left; color: {text_color}; font-size: 11px; opacity: 0.8; margin-left: 5px;'>
+        By Devendra Ramanuj
     </div>
     """, unsafe_allow_html=True)
 
-st.write("---")
-
-# --- 5. Settings Menu (Right Side) ---
+# 5. Settings Menu (Right Side)
 web_search = False
 
-# કોલમ સેટિંગ: [ખાલી જગ્યા (6 ભાગ), બટન (1 ભાગ)]
-col_space, col_btn = st.columns([6, 1]) 
-
 with col_btn:
-    # અહીં જમણી બાજુ બટન આવશે
     with st.popover("⚙️", use_container_width=True):
         st.write("###### 🎨 Theme")
         st.toggle("🌗 Mode", value=st.session_state.theme, on_change=toggle_theme)
@@ -126,19 +143,18 @@ with col_btn:
             st.session_state.messages = []
             st.rerun()
 
+st.write("---")
+
 # --- 6. API Setup ---
 try:
     GOOGLE_API_KEY = st.secrets["GOOGLE_API_KEY"]
     genai.configure(api_key=GOOGLE_API_KEY)
     
     sys_prompt = """
-    તારું નામ DEV (દેવ) છે. તું દેવેન્દ્રભાઈ રામાનુજ દ્વારા બનાવાયેલો પરિવારનો સભ્ય છે.
+    તારું નામ DEV (દેવ) છે. 
+    તું દેવેન્દ્રભાઈ રામાનુજ દ્વારા બનાવાયેલો પરિવારનો એક સભ્ય છે.
     તારે હંમેશા ગુજરાતીમાં જ વાત કરવાની છે.
-    
-    સૂચનાઓ:
-    1. જો સામાન્ય વાત હોય, તો ટૂંકમાં અને પ્રેમથી જવાબ આપવો.
-    2. જો માહિતી માંગે, તો જ વિસ્તૃત સમજાવવું.
-    3. તારે દેવેન્દ્રભાઈનો આભાર માનવાનો છે.
+    તારે દેવેન્દ્રભાઈનો આભાર માનવાનો છે.
     """
     model = genai.GenerativeModel('gemini-2.0-flash', system_instruction=sys_prompt)
 except:
@@ -167,7 +183,7 @@ def clean_text_for_audio(text):
 # --- 8. Chat Logic ---
 if "messages" not in st.session_state:
     st.session_state.messages = [
-        {"role": "assistant", "content": "જયશ્રી કૃષ્ણ! 🙏 હું DEV છું. બોલો!"}
+        {"role": "assistant", "content": "જયશ્રી કૃષ્ણ! 🙏 હું DEV છું."}
     ]
 
 for message in st.session_state.messages:
@@ -189,9 +205,10 @@ if user_input := st.chat_input("દેવને પૂછો, અથવા ક�
             with st.spinner("વિચારી રહ્યો છું..."):
                 response_text = ""
                 
+                # Logic
                 if web_search:
                     current_time = get_current_time()
-                    st.toast(f"Searching... 🌍")
+                    st.toast(f"Searching Web... 🌍")
                     search_results = search_internet(user_input)
                     prompt = f"Time: {current_time}\nInfo: {search_results}\nQuestion: {user_input}\nAnswer in Gujarati politely."
                     response = model.generate_content(prompt)
@@ -209,19 +226,20 @@ if user_input := st.chat_input("દેવને પૂછો, અથવા ક�
                     response = model.generate_content(prompt)
                     response_text = response.text
                 else:
-                    gemini_history = []
+                    chat_history = []
                     for m in st.session_state.messages:
                         if m["role"] != "system" and "audio_bytes" not in m:
                             role = "model" if m["role"] == "assistant" else "user"
                             if m["content"] != user_input: 
-                                gemini_history.append({"role": role, "parts": [m["content"]]})
+                                chat_history.append({"role": role, "parts": [m["content"]]})
                     
-                    chat = model.start_chat(history=gemini_history)
+                    chat = model.start_chat(history=chat_history)
                     response = chat.send_message(user_input)
                     response_text = response.text
 
                 st.markdown(response_text)
                 
+                # Voice (Fixed)
                 try:
                     clean_voice_text = clean_text_for_audio(response_text)
                     if clean_voice_text:
