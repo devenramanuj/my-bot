@@ -30,7 +30,7 @@ else:
     text_color = "#000000"
     title_color = "#00008B"
 
-# --- 3. CSS Styling (LIFT UP STRATEGY) ---
+# --- 3. CSS Styling ---
 st.markdown(f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap');
@@ -44,10 +44,16 @@ st.markdown(f"""
         color: {text_color} !important;
     }}
 
-    /* 🛑 CHAT BOX LIFT (70px ઉપર) */
+    /* Hide Logos */
+    header, footer, #MainMenu, div[data-testid="stStatusWidget"], .stDeployButton {{
+        display: none !important;
+        visibility: hidden !important;
+    }}
+
+    /* Chat Input Lift (60px Up) */
     .stChatInput {{
         position: fixed !important;
-        bottom: 70px !important; /* અહીં બોક્સ ઉપર લીધું */
+        bottom: 60px !important;
         left: 0 !important;
         right: 0 !important;
         padding-top: 15px !important;
@@ -55,18 +61,6 @@ st.markdown(f"""
         background-color: {main_bg} !important;
         z-index: 999999 !important;
         border-top: 1px solid {text_color};
-    }}
-    
-    /* લોગોને નીચે પડ્યો રહેવા દો (Hide if possible) */
-    div[data-testid="stStatusWidget"] {{
-        visibility: hidden !important;
-        z-index: 1 !important;
-    }}
-
-    /* મેસેજ લિસ્ટ માટે નીચે જગ્યા */
-    .block-container {{
-        padding-top: 2rem !important;
-        padding-bottom: 180px !important;
     }}
 
     /* Settings Menu */
@@ -79,17 +73,17 @@ st.markdown(f"""
         color: #000000 !important;
     }}
 
-    /* Hide Headers */
-    header, footer, #MainMenu, .stDeployButton {{
-        display: none !important;
-    }}
-
     h1 {{
         font-family: 'Orbitron', sans-serif !important;
         color: {title_color} !important;
         text-align: center;
         font-size: 3rem !important;
         margin-top: 10px;
+    }}
+
+    .block-container {{
+        padding-top: 2rem !important;
+        padding-bottom: 160px !important;
     }}
     </style>
     """, unsafe_allow_html=True)
@@ -128,16 +122,20 @@ with st.expander("⚙️"):
         st.session_state.messages = []
         st.rerun()
 
-# --- 6. API Setup ---
+# --- 6. API Setup (અહીં સુધારો કર્યો છે) ---
 try:
     GOOGLE_API_KEY = st.secrets["GOOGLE_API_KEY"]
     genai.configure(api_key=GOOGLE_API_KEY)
     
+    # 🛑 SMART PROMPT (હવે તે સમજી જશે)
     sys_prompt = """
-    તારું નામ DEV (દેવ) છે. 
-    તું દેવેન્દ્રભાઈ રામાનુજ દ્વારા બનાવાયેલો પરિવારનો એક સભ્ય છે.
+    તારું નામ DEV (દેવ) છે. તું દેવેન્દ્રભાઈ રામાનુજ દ્વારા બનાવાયેલો પરિવારનો સભ્ય છે.
     તારે હંમેશા ગુજરાતીમાં જ વાત કરવાની છે.
-    તારે કોઈપણ પ્રશ્નનો જવાબ ટૂંકમાં નથી આપવાનો, પણ **વિસ્તૃત (Detailed)** સમજાવીને આપવાનો છે.
+    
+    તારે જવાબ કેવી રીતે આપવો:
+    1. જો કોઈ **"ગુડ મોર્નિંગ", "કેમ છો", "જય શ્રી કૃષ્ણ"** જેવી સામાન્ય વાત કરે, તો જવાબ **ટૂંકો, મીઠો અને નેચરલ** આપવો. (તેના પર ભાષણ ન આપવું).
+    2. જો કોઈ **માહિતી, જ્ઞાન કે પ્રશ્ન** પૂછે, તો જ જવાબ **વિસ્તૃત (Detailed)** આપવો.
+    3. તારે દેવેન્દ્રભાઈનો આભાર માનવાનો છે.
     """
     model = genai.GenerativeModel('gemini-2.0-flash', system_instruction=sys_prompt)
 except:
@@ -166,14 +164,13 @@ def clean_text_for_audio(text):
 # --- 8. Chat Logic ---
 if "messages" not in st.session_state:
     st.session_state.messages = [
-        {"role": "assistant", "content": "જયશ્રી કૃષ્ણ! 🙏 હું DEV છું. હું તમારી શું મદદ કરી શકું?"}
+        {"role": "assistant", "content": "જયશ્રી કૃષ્ણ! 🙏 હું DEV છું. બોલો!"}
     ]
 
 for message in st.session_state.messages:
     avatar = "🤖" if message["role"] == "assistant" else "👤"
     with st.chat_message(message["role"], avatar=avatar):
         st.markdown(message["content"])
-        # 🛑 AUDIO FIX: Bytes થી પ્લે કરો
         if "audio_bytes" in message:
             st.audio(message["audio_bytes"], format="audio/mp3")
 
@@ -194,7 +191,7 @@ if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું મ�
                     current_time = get_current_time()
                     st.toast(f"Searching Web... 🌍")
                     search_results = search_internet(user_input)
-                    prompt = f"Time: {current_time}\nInfo: {search_results}\nQuestion: {user_input}\nAnswer in Gujarati in detail."
+                    prompt = f"Time: {current_time}\nInfo: {search_results}\nQuestion: {user_input}\nAnswer in Gujarati."
                     response = model.generate_content(prompt)
                     response_text = response.text
                 elif uploaded_file is not None and uploaded_file.name.endswith(('.jpg', '.png', '.jpeg')):
@@ -218,17 +215,16 @@ if user_input := st.chat_input("Ask DEV... (કી-બોર્ડનું મ�
                                 chat_history.append({"role": role, "parts": [m["content"]]})
                     
                     chat = model.start_chat(history=chat_history)
-                    response = chat.send_message(user_input + " (વિસ્તારથી સમજાવ)")
+                    response = chat.send_message(user_input) # "વિસ્તારથી સમજાવ" કાઢી નાખ્યું, પ્રોમ્પ્ટ સંભાળી લેશે
                     response_text = response.text
 
                 st.markdown(response_text)
                 
-                # 🛑 VOICE (Bytes Save)
+                # Voice
                 try:
                     clean_voice_text = clean_text_for_audio(response_text)
                     if clean_voice_text:
                         tts = gTTS(text=clean_voice_text, lang='gu') 
-                        
                         audio_buffer = io.BytesIO()
                         tts.write_to_fp(audio_buffer)
                         audio_data = audio_buffer.getvalue()
